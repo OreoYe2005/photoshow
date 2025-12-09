@@ -56,42 +56,15 @@ def show_album(album_name):
 
 # --- 4. 上传页面 ---
 @app.route('/upload', methods=['GET', 'POST'])
+# api/index.py 的 upload_page 部分
+
+@app.route('/upload')
 def upload_page():
-    if request.method == 'GET':
-        return render_template('upload.html')
-    
-    # 处理上传逻辑
-    if request.method == 'POST':
-        file = request.files.get('file')
-        password = request.form.get('password')
-        album = request.form.get('album') # 获取用户输入的相簿名
-
-        if password != "oreo2025": # 简单的密码保护
-            return "密码错误！"
-
-        if file:
-            # 1. 上传文件到 Storage
-            # 为了防止重名覆盖，我们在文件名前加个时间戳
-            filename = f"{int(time.time())}_{file.filename}"
-            file_bytes = file.read() # 读取文件内容
-            
-            # 上传到 'photos' 桶
-            res = supabase.storage.from_("photos").upload(filename, file_bytes, {"content-type": file.content_type})
-            
-            # 2. 获取公开访问链接
-            public_url = supabase.storage.from_("photos").get_public_url(filename)
-            
-            # 3. 把信息写入 Database
-            data = {
-                "title": file.filename.split('.')[0],
-                "url": public_url,
-                "album": album if album else "未分类"
-            }
-            supabase.table('photos').insert(data).execute()
-
-            return redirect(url_for('home'))
-    
-    return "上传失败"
+    # 我们只需要渲染页面，不需要处理 POST 请求了 (上传逻辑移到了前端)
+    # 关键：把 Key 传给网页，这样网页里的 JS 才能用
+    return render_template('upload.html', 
+                         supabase_url=SUPABASE_URL, 
+                         supabase_key=SUPABASE_KEY)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
