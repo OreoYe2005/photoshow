@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传照片</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-neutral-900 text-white flex items-center justify-center min-h-screen">
+
+    <div class="bg-neutral-800 p-8 rounded-xl shadow-2xl w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-6 text-center">上传到 Supabase</h1>
+        
+        <form action="/upload" method="post" enctype="multipart/form-data" class="space-y-4">
+            
+            <div>
+                <label class="block mb-2 text-sm text-neutral-400">选择照片</label>
+                <input type="file" name="file" accept="image/*" required
+                    class="block w-full text-sm text-neutral-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-500">
+            </div>
+
+            <div>
+                <label class="block mb-2 text-sm text-neutral-400">相簿名称 (分类)</label>
+                <input type="text" name="album" placeholder="例如：人像、风光" required
+                    class="w-full px-4 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:border-green-500">
+            </div>
+
+            <div>
+                <label class="block mb-2 text-sm text-neutral-400">管理员密码</label>
+                <input type="password" name="password" placeholder="验证身份" required
+                    class="w-full px-4 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:border-green-500">
+            </div>
+
+            <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 rounded hover:bg-green-500 transition-colors">
+                开始上传 🚀
+            </button>
+        </form>
+        
+        <div class="mt-4 text-center">
+             <a href="/" class="text-neutral-500 text-sm">返回首页</a>
+        </div>
+    </div>
+</body>
+</html>
