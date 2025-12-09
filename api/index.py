@@ -8,7 +8,7 @@ app = Flask(__name__, template_folder='../templates', static_folder='../static')
 # --- 1. 配置 Supabase (请填入你的真实信息) ---
 # 为了安全，建议以后放到环境变量里，但现在先直接填
 SUPABASE_URL = "https://vupgwbjkdvriurufruua.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1cGd3YmprZHZyaXVydWZydXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyODUyOTEsImV4cCI6MjA4MDg2MTI5MX0.Hdk6pmuOdv8EKAZwYqUlhQozEhxPybOWt0I85tgF1Hw"
+SUPABASE_KEY = "sb_publishable_jCdGSbLG70rJeWvEst0wRw_r6IdL_ER"
 
 # 初始化客户端
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
