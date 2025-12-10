@@ -31,11 +31,9 @@
                 {% for photo in photos %}
                 <div class="break-inside-avoid bg-neutral-800 rounded-xl overflow-hidden shadow-lg group">
                     <img src="{{ photo.src }}" loading="lazy" class="w-full h-auto object-cover">
-                    
                     <div class="p-4">
-                        <h3 class="font-bold text-lg mb-1">{{ photo.title }}</h3>
                         {% if photo.description %}
-                            <p class="text-neutral-400 text-sm">{{ photo.description }}</p>
+                            <p class="text-neutral-300 text-sm leading-relaxed">{{ photo.description }}</p>
                         {% endif %}
                     </div>
                 </div>
