@@ -3,30 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ album_name }} - 照片详情</title>
+    <title>{{ album_name }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* 隐藏滚动条但保持滚动功能 */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-    </style>
 </head>
 <body class="bg-neutral-900 text-white min-h-screen">
 
-    <nav class="fixed top-0 w-full bg-neutral-900/80 backdrop-blur-md z-50 border-b border-neutral-800 p-4 flex justify-between items-center">
-        <a href="/" class="text-sm font-bold hover:text-yellow-400 transition-colors flex items-center gap-2">
-            ← 返回首页
-        </a>
-        <span class="text-lg font-bold">{{ album_name }}</span>
-        <div class="w-16"></div> </nav>
+    <nav class="fixed top-0 w-full bg-neutral-900/80 backdrop-blur-md z-50 border-b border-neutral-800 p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="/" class="text-sm font-bold hover:text-green-400 transition-colors flex items-center gap-2">
+                ← 返回首页
+            </a>
+            <span class="text-lg font-bold">{{ album_name }}</span>
+            <div class="w-16"></div>
+        </div>
+    </nav>
 
-    <main class="max-w-7xl mx-auto px-4 pt-24 pb-20">
+    <header class="pt-32 pb-10 px-4 text-center max-w-2xl mx-auto">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">{{ album_name }}</h1>
+        <p class="text-neutral-400 text-lg leading-relaxed">{{ album_desc }}</p>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 pb-20">
         {% if photos|length == 0 %}
             <div class="text-center text-neutral-500 mt-20">这里还没有照片哦</div>
         {% else %}
-            <div class="columns-1 md:columns-2 lg:columns-3 gap-4 space-y-4">
+            <div class="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
                 {% for photo in photos %}
-                <div class="break-inside-avoid relative group">
-                    <img src="{{ photo.src }}" loading="lazy" class="w-full h-auto rounded-lg object-cover hover:opacity-90 transition-opacity">
+                <div class="break-inside-avoid bg-neutral-800 rounded-xl overflow-hidden shadow-lg group">
+                    <img src="{{ photo.src }}" loading="lazy" class="w-full h-auto object-cover">
+                    
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg mb-1">{{ photo.title }}</h3>
+                        {% if photo.description %}
+                            <p class="text-neutral-400 text-sm">{{ photo.description }}</p>
+                        {% endif %}
+                    </div>
                 </div>
                 {% endfor %}
             </div>
