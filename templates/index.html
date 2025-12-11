@@ -5,81 +5,141 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OREO 的摄影集</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    
     <style>
-        /* 🟢 定义滚动动画 */
-        @keyframes scroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); } /* 移动一半的距离 */
+        /* 确保 Swiper 容器没有背景色差，并设置内边距给阴影留空间 */
+        .swiper {
+            width: 100%;
+            padding-top: 50px;
+            padding-bottom: 50px;
+            background-color: transparent; /* 关键：透明背景 */
         }
-        .animate-scroll {
-            display: flex;
-            width: max-content; /* 让宽度自适应内容 */
-            animation: scroll 30s linear infinite; /* 30秒滚完一圈，无限循环 */
+
+        /* 幻灯片基础样式 */
+        .swiper-slide {
+            width: 300px; /* 默认宽度，大屏下显得精致 */
+            height: 200px; /* 默认高度 */
+            /* 默认状态：缩小、变暗 */
+            transform: scale(0.85);
+            opacity: 0.5;
+            transition: all 0.4s ease-in-out; /* 平滑过渡动画 */
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
-        /* 鼠标悬停时暂停滚动，方便用户看照片 */
-        .scroll-container:hover .animate-scroll {
-            animation-play-state: paused;
+
+        /* 🌟 C位样式：当前激活的那张幻灯片 */
+        .swiper-slide-active {
+            /* 放大 */
+            transform: scale(1.15);
+            /* 完全不透明 */
+            opacity: 1;
+            z-index: 10;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); /* 更强的阴影 */
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .swiper-slide img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* 针对手机端的优化 */
+        @media (max-width: 768px) {
+            .swiper-slide {
+                width: 70%; /* 手机上宽度占 70% */
+                height: 180px;
+            }
         }
     </style>
 </head>
-<body class="bg-neutral-900 text-white min-h-screen font-sans">
+<body class="bg-neutral-900 text-white min-h-screen font-sans selection:bg-green-500 selection:text-white">
 
     {% if hero_photos %}
-    <div class="relative w-full overflow-hidden border-b border-neutral-800 bg-black/50 py-8 scroll-container">
-        <div class="animate-scroll gap-6 px-6">
-            {% for photo in hero_photos %}
-            <div class="relative w-64 h-48 flex-shrink-0 rounded-lg overflow-hidden shadow-2xl group cursor-pointer transition-transform hover:scale-105">
-                <img src="{{ photo.url }}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
-                <div class="absolute bottom-2 left-2 text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md">
-                    {{ photo.title }}
+    <div class="relative w-full overflow-hidden mt-6 mb-6">
+        <div class="swiper mySwiper">
+            <div class="swiper-wrapper">
+                {% for photo in hero_photos %}
+                <div class="swiper-slide relative group cursor-pointer">
+                    <img src="{{ photo.url }}" loading="lazy" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300"></div>
+                    <div class="absolute bottom-4 left-4 text-sm font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md">
+                        {{ photo.title }}
+                    </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-
-            {% for photo in hero_photos %}
-            <div class="relative w-64 h-48 flex-shrink-0 rounded-lg overflow-hidden shadow-2xl group cursor-pointer transition-transform hover:scale-105">
-                <img src="{{ photo.url }}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
-                <div class="absolute bottom-2 left-2 text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md">
-                    {{ photo.title }}
-                </div>
-            </div>
-            {% endfor %}
         </div>
-
-        <div class="absolute top-0 left-0 h-full w-16 bg-gradient-to-r from-neutral-900 to-transparent z-10 pointer-events-none"></div>
-        <div class="absolute top-0 right-0 h-full w-16 bg-gradient-to-l from-neutral-900 to-transparent z-10 pointer-events-none"></div>
     </div>
     {% endif %}
 
-    <header class="py-12 md:py-20 px-4 text-center">
+    <header class="py-10 md:py-16 px-4 text-center">
         <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
             慕心水誥
         </h1>
         <p class="text-neutral-400 text-lg md:text-xl font-light tracking-wide">
-            2020 - 2025
+            2020 — 2025
         </p>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 pb-20">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {% for album in albums %}
-            <a href="/album/{{ album.name }}" class="group block relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer">
-                <img src="{{ album.cover }}" alt="{{ album.name }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100">
-                
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 transition-opacity"></div>
-                
-                <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                    <h2 class="text-3xl font-bold text-white mb-1">{{ album.name }}</h2>
-                    <p class="text-green-400 text-sm font-medium uppercase tracking-widest">{{ album.count }} 张照片</p>
-                </div>
-            </a>
-            {% endfor %}
-        </div>
+    <main class="max-w-7xl mx-auto px-4 pb-32">
+        {% if albums|length == 0 %}
+            <div class="text-center text-neutral-600 py-20">
+                <p>暂无相簿，点击右下角上传第一张照片吧！</p>
+            </div>
+        {% else %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for album in albums %}
+                <a href="/album/{{ album.name }}" class="group block relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-neutral-800">
+                    <img src="{{ album.cover }}" alt="{{ album.name }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100">
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
+                    
+                    <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                        <h2 class="text-3xl font-bold text-white mb-1 drop-shadow-lg">{{ album.name }}</h2>
+                        <p class="text-green-400 text-sm font-medium uppercase tracking-widest">{{ album.count }} 张照片</p>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        {% endif %}
 
-        <a href="/upload" class="fixed bottom-8 right-8 bg-green-600 hover:bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 text-2xl font-bold z-50">
+        <a href="/upload" class="fixed bottom-8 right-8 bg-green-600 hover:bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 hover:rotate-90 text-2xl font-bold z-50">
             +
         </a>
     </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+    <script>
+        var swiper = new Swiper(".mySwiper", {
+            // 核心模式：让当前激活的 slide 居中
+            centeredSlides: true,
+            // 自动计算每屏显示的数量 (根据 CSS 里的 width)
+            slidesPerView: "auto",
+            // 幻灯片之间的间距
+            spaceBetween: 30,
+            // 开启无限循环
+            loop: true,
+            // 开启自动播放
+            autoplay: {
+                delay: 2000, // 🌟 停顿 2秒
+                disableOnInteraction: false, // 用户滑动后继续自动播放
+            },
+            // 切换速度 (毫秒)，让过渡更平滑
+            speed: 800, 
+            // 鼠标滚轮控制 (可选)
+            mousewheel: false,
+            // 键盘控制 (可选)
+            keyboard: true,
+            // 抓手光标
+            grabCursor: true,
+        });
+    </script>
 
 </body>
 </html>
