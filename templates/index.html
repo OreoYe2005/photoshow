@@ -3,62 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OREO 的摄影集</title>
+    <title>慕心水誥</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     
     <style>
-        /* 容器优化 */
+        /* 容器样式 */
         .swiper {
             width: 100%;
-            padding-top: 50px;
-            padding-bottom: 50px;
+            padding-top: 40px;
+            padding-bottom: 40px;
             background-color: transparent;
-            /* 防止容器边缘裁剪导致的闪烁 */
-            perspective: 1200px; 
         }
 
-        /* 🎨 Slide 样式优化 */
+        /* 🎨 Slide 样式：统一大小，不再缩放 */
         .swiper-slide {
+            /* 统一宽度和高度 */
+            width: 320px; 
+            height: 220px;
+            
             background-position: center;
             background-size: cover;
-            width: 300px;
-            height: 200px;
-            border-radius: 12px;
-            /* 基础状态：半透明 */
-            opacity: 0.6; 
+            border-radius: 8px; /* 圆角稍微改小一点，更硬朗 */
             
-            /* ⚡️ 核心优化：开启硬件加速，防止卡顿 */
-            transform: translate3d(0,0,0);
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            will-change: transform, opacity; /* 告诉浏览器这个元素要动 */
+            /* 默认状态：稍微变暗，做一点点模糊 */
+            opacity: 0.4;
+            filter: blur(1px); 
             
-            /* 只对 opacity 做过渡，transform 交给 Swiper 里的 JS 控制，避免 CSS 冲突 */
-            transition: opacity 0.4s ease-out;
+            /* ⚡️ 核心改动：不再写 transform: scale(...) */
+            transition: all 0.4s ease; /* 只有透明度和模糊度的过渡，非常轻量 */
             
-            margin-left: auto; 
-            margin-right: auto;
-            
-            /* 阴影优化：不要用太大的扩散半径，影响性能 */
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
             overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
+        /* 电脑端加宽 */
         @media (min-width: 768px) {
             .swiper-slide {
-                width: 480px;
-                height: 320px;
+                width: 450px;
+                height: 300px;
             }
         }
 
-        /* 🌟 激活状态 */
+        /* 🌟 激活状态 (C位)：只有亮度和清晰度的变化 */
         .swiper-slide-active {
-            opacity: 1;
+            opacity: 1;      /* 完全不透明 */
+            filter: blur(0); /* 清晰 */
             z-index: 10;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); /* 稍微强一点的阴影 */
             border: 1px solid rgba(255,255,255,0.2);
-            /* 激活时加重阴影 */
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         }
 
         .swiper-slide img {
@@ -66,21 +59,19 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            /* 图片也开启硬件加速 */
-            transform: translate3d(0,0,0);
         }
     </style>
 </head>
 <body class="bg-neutral-900 text-white min-h-screen font-sans">
 
     {% if hero_photos %}
-    <div class="relative w-full overflow-hidden mt-4 mb-4">
+    <div class="relative w-full overflow-hidden mt-6 mb-6">
         <div class="swiper mySwiper">
             <div class="swiper-wrapper">
                 {% for photo in hero_photos %}
                 <div class="swiper-slide relative group cursor-pointer">
                     <img src="{{ photo.url }}" loading="lazy" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
+                    <div class="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors"></div>
                     <div class="absolute bottom-4 left-4 text-sm font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md">
                         {{ photo.title }}
                     </div>
@@ -93,10 +84,10 @@
 
     <header class="py-10 md:py-16 px-4 text-center">
         <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
-            慕心水誥
+            OREO 的摄影集
         </h1>
         <p class="text-neutral-400 text-lg md:text-xl font-light tracking-wide">
-             2020-2025
+            记录光影，定格瞬间。
         </p>
     </header>
 
@@ -127,45 +118,37 @@
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-
     <script>
         var swiper = new Swiper(".mySwiper", {
-            // 模式：Coverflow 3D
-            effect: "coverflow",
-            grabCursor: true,
+            // ❌ 删掉了 effect: 'coverflow'，回归默认的平滑滑动模式
+            
+            // 依然保持居中
             centeredSlides: true,
             slidesPerView: "auto",
             
-            // ⚡️ 3D 参数优化：减少 rotate 角度，提升流畅度
-            coverflowEffect: {
-                rotate: 0,      // 设置为 0，避免旋转带来的锯齿感
-                stretch: 0,     // 拉伸
-                depth: 120,     // 深度 (中间突出的程度)
-                modifier: 1,    // 效果倍率
-                slideShadows: true, // 开启阴影 (如果还卡，可以把这个设为 false)
-            },
-
-            // ⚡️ 循环优化
+            // 图片之间的间距
+            spaceBetween: 20,
+            
             loop: true,
-            // 增加缓冲数量，防止循环衔接时的"跳变"
-            loopedSlides: 8, 
+            // 增加缓冲，保证无缝衔接
+            loopedSlides: 6,
             
-            // ⚡️ 渲染优化 (关键参数)
-            roundLengths: true,      // 强制像素取整，防止文字/图片模糊抖动
-            watchSlidesProgress: true, // 开启进度监听，让 3D 变换更跟手
-
+            // 自动播放
             autoplay: {
-                delay: 2000, 
+                delay: 2000, // 停顿 2秒
                 disableOnInteraction: false,
-                // 防止页面切换回来后自动播放停止
-                pauseOnMouseEnter: true, 
+                pauseOnMouseEnter: true,
             },
             
-            // 切换速度：稍微调慢一点，会让动画看起来更稳
-            speed: 800,
+            // 切换速度：平滑
+            speed: 600,
             
-            slideToClickedSlide: true
+            // 抓手光标
+            grabCursor: true,
+            slideToClickedSlide: true,
+            
+            // 开启像素取整，防止模糊
+            roundLengths: true
         });
     </script>
 
