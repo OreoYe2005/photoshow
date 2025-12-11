@@ -13,44 +13,45 @@
             width: 100%;
             padding-top: 40px;
             padding-bottom: 40px;
-            background-color: transparent;
+            /* 关键：防止容器本身有内边距导致计算偏差 */
+            box-sizing: border-box; 
         }
 
-        /* 🎨 Slide 样式：统一大小，不再缩放 */
+        /* 🎨 Slide 样式 */
         .swiper-slide {
-            /* 统一宽度和高度 */
+            /* 关键修复：宽高必须是固定的数值，Swiper 才能算准中心点 */
             width: 320px; 
             height: 220px;
             
             background-position: center;
             background-size: cover;
-            border-radius: 8px; /* 圆角稍微改小一点，更硬朗 */
+            border-radius: 8px;
             
-            /* 默认状态：稍微变暗，做一点点模糊 */
+            /* 默认状态：稍微变暗，变小一点点 (用 CSS scale 性能最好) */
             opacity: 0.4;
-            filter: blur(1px); 
-            
-            /* ⚡️ 核心改动：不再写 transform: scale(...) */
-            transition: all 0.4s ease; /* 只有透明度和模糊度的过渡，非常轻量 */
+            transform: scale(0.9); /* 稍微缩小两边的 */
+            transition: all 0.4s ease; /* 平滑过渡 */
             
             overflow: hidden;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            
+            /* ❌ 绝对不要在这里写 margin: auto，这会破坏居中！ */
         }
 
-        /* 电脑端加宽 */
+        /* 电脑端宽度 */
         @media (min-width: 768px) {
             .swiper-slide {
-                width: 450px;
-                height: 300px;
+                width: 480px;
+                height: 320px;
             }
         }
 
-        /* 🌟 激活状态 (C位)：只有亮度和清晰度的变化 */
+        /* 🌟 激活状态 (C位) */
         .swiper-slide-active {
             opacity: 1;      /* 完全不透明 */
-            filter: blur(0); /* 清晰 */
+            transform: scale(1); /* 恢复原大 */
             z-index: 10;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5); /* 稍微强一点的阴影 */
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
             border: 1px solid rgba(255,255,255,0.2);
         }
 
@@ -84,10 +85,10 @@
 
     <header class="py-10 md:py-16 px-4 text-center">
         <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
-            OREO 的摄影集
+            慕心水誥
         </h1>
         <p class="text-neutral-400 text-lg md:text-xl font-light tracking-wide">
-            记录光影，定格瞬间。
+            2020-2025
         </p>
     </header>
 
@@ -120,34 +121,29 @@
 
     <script>
         var swiper = new Swiper(".mySwiper", {
-            // ❌ 删掉了 effect: 'coverflow'，回归默认的平滑滑动模式
-            
-            // 依然保持居中
+            // 🌟 1. 核心居中参数
             centeredSlides: true,
             slidesPerView: "auto",
             
-            // 图片之间的间距
-            spaceBetween: 20,
-            
+            // 🌟 2. 循环参数优化 (解决不居中和跳变的关键)
             loop: true,
-            // 增加缓冲，保证无缝衔接
-            loopedSlides: 6,
+            loopedSlides: 10, // 增加缓冲数量，确保左右两边都有足够的图
             
-            // 自动播放
+            spaceBetween: 20, // 间距
+            
+            // 🌟 3. 渲染监听 (防止加载慢导致的错位)
+            observer: true,
+            observeParents: true,
+
             autoplay: {
-                delay: 2000, // 停顿 2秒
+                delay: 2000, 
                 disableOnInteraction: false,
                 pauseOnMouseEnter: true,
             },
             
-            // 切换速度：平滑
             speed: 600,
-            
-            // 抓手光标
             grabCursor: true,
             slideToClickedSlide: true,
-            
-            // 开启像素取整，防止模糊
             roundLengths: true
         });
     </script>
