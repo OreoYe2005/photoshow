@@ -40,44 +40,41 @@ def home():
 
 @app.route('/album/<album_name>')
 def show_album(album_name):
-    # 1. 获取照片 (确保按时间倒序排列)
-    response = supabase.table('photos').select("*").eq('album', album_name).order('created_at', desc=True).execute()
+    # 🟢 改动1：按 taken_at 倒序排列 (如果它是 null，Supabase 默认会把它排在最后)
+    # 也可以用 SQL 的 coalesce 逻辑，但这里我们简单点，直接按 taken_at 排序
+    # 注意：旧照片没有 taken_at，它们可能会显示在最后或者最前
+    response = supabase.table('photos').select("*").eq('album', album_name).order('taken_at', desc=True).execute()
     
-    # 2. 分组逻辑
     grouped_photos = []
     
     for item in response.data:
-        # 解析时间 (Supabase 返回的是 UTC 时间字符串，如 2025-12-09T...)
-        # 注意：这里简单处理，直接取前7位 (YYYY-MM) 做分组其实最快，但为了格式好看我们转换一下
         try:
-            # 将字符串转为时间对象
-            dt = datetime.fromisoformat(item['created_at'].replace('Z', '+00:00'))
-            # 格式化成 "2025年12月"
+            # 🟢 改动2：优先使用 taken_at，如果没有(旧照片)就回退使用 created_at
+            time_str = item.get('taken_at')
+            if not time_str:
+                time_str = item['created_at']
+                
+            dt = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
             date_label = dt.strftime('%Y年%m月')
         except:
             date_label = "未知日期"
 
-        # 处理照片数据对象
         photo_data = {
             "src": item['url'],
             "title": item['title'],
             "description": item.get('description', '')
         }
 
-        # 核心算法：如果你是列表里的第一个，或者你的日期和上一组不一样，就新建一组
         if not grouped_photos or grouped_photos[-1]['date'] != date_label:
             grouped_photos.append({
                 "date": date_label,
                 "photos": []
             })
         
-        # 把照片塞进最后一组里
         grouped_photos[-1]['photos'].append(photo_data)
     
-    # 获取相簿说明
     album_desc = ALBUM_DESCRIPTIONS.get(album_name, "这是一个精选相簿。")
 
-    # 注意：这里传给前端的变量名变了，以前叫 photos，现在叫 grouped_photos
     return render_template('album.html', 
                            album_name=album_name, 
                            album_desc=album_desc, 
