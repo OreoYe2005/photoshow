@@ -5,40 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OREO 的摄影集</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     
     <style>
-        /* 确保 Swiper 容器没有背景色差，并设置内边距给阴影留空间 */
+        /* 容器样式 */
         .swiper {
             width: 100%;
-            padding-top: 50px;
-            padding-bottom: 50px;
-            background-color: transparent; /* 关键：透明背景 */
+            padding-top: 40px;
+            padding-bottom: 40px;
+            background-color: transparent;
         }
 
-        /* 幻灯片基础样式 */
+        /* 🎨 核心修复逻辑：
+           我们设定所有幻灯片默认都是“缩小且半透明”的 (Inactive 状态)
+           只有当它拥有 .swiper-slide-active 类时，才恢复正常大小。
+        */
         .swiper-slide {
-            width: 300px; /* 默认宽度，大屏下显得精致 */
-            height: 200px; /* 默认高度 */
-            /* 默认状态：缩小、变暗 */
-            transform: scale(0.85);
-            opacity: 0.5;
-            transition: all 0.4s ease-in-out; /* 平滑过渡动画 */
+            /* 设置为固定宽度，或者屏幕宽度的百分比 
+              手机端占 70%，电脑端固定 400px，这样更容易居中
+            */
+            width: 70%; 
+            height: 220px;
+            
+            /* 默认状态：非中心图片 */
+            transform: scale(0.85); /* 缩小 */
+            opacity: 0.4;           /* 变暗 */
+            filter: blur(1px);      /* 轻微模糊，增强景深感 */
+            
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* 丝滑过渡 */
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
 
-        /* 🌟 C位样式：当前激活的那张幻灯片 */
+        /* 电脑端宽度调整 */
+        @media (min-width: 768px) {
+            .swiper-slide {
+                width: 450px; /* 电脑上大一点 */
+                height: 300px;
+            }
+        }
+
+        /* 🌟 C位样式：当前激活的那张 */
         .swiper-slide-active {
-            /* 放大 */
-            transform: scale(1.15);
-            /* 完全不透明 */
+            /* 恢复原始大小 (这就相当于放大了) */
+            transform: scale(1); 
             opacity: 1;
+            filter: blur(0);
             z-index: 10;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6); /* 更强的阴影 */
-            border: 1px solid rgba(255,255,255,0.1);
+            /* 强烈的阴影和边框，强调 C 位 */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         .swiper-slide img {
@@ -47,26 +64,18 @@
             height: 100%;
             object-fit: cover;
         }
-        
-        /* 针对手机端的优化 */
-        @media (max-width: 768px) {
-            .swiper-slide {
-                width: 70%; /* 手机上宽度占 70% */
-                height: 180px;
-            }
-        }
     </style>
 </head>
-<body class="bg-neutral-900 text-white min-h-screen font-sans selection:bg-green-500 selection:text-white">
+<body class="bg-neutral-900 text-white min-h-screen font-sans">
 
     {% if hero_photos %}
-    <div class="relative w-full overflow-hidden mt-6 mb-6">
+    <div class="relative w-full overflow-hidden mt-4 mb-4">
         <div class="swiper mySwiper">
             <div class="swiper-wrapper">
                 {% for photo in hero_photos %}
                 <div class="swiper-slide relative group cursor-pointer">
                     <img src="{{ photo.url }}" loading="lazy" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300"></div>
+                    <div class="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
                     <div class="absolute bottom-4 left-4 text-sm font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md">
                         {{ photo.title }}
                     </div>
@@ -79,10 +88,10 @@
 
     <header class="py-10 md:py-16 px-4 text-center">
         <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
-            慕心水誥
+            OREO 的摄影集
         </h1>
         <p class="text-neutral-400 text-lg md:text-xl font-light tracking-wide">
-            2020 — 2025
+            记录光影，定格瞬间。
         </p>
     </header>
 
@@ -96,9 +105,7 @@
                 {% for album in albums %}
                 <a href="/album/{{ album.name }}" class="group block relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-neutral-800">
                     <img src="{{ album.cover }}" alt="{{ album.name }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100">
-                    
                     <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
-                    
                     <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                         <h2 class="text-3xl font-bold text-white mb-1 drop-shadow-lg">{{ album.name }}</h2>
                         <p class="text-green-400 text-sm font-medium uppercase tracking-widest">{{ album.count }} 张照片</p>
@@ -116,28 +123,35 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
     <script>
+        // 🟢 修复后的 JS 配置
         var swiper = new Swiper(".mySwiper", {
-            // 核心模式：让当前激活的 slide 居中
+            // 1. 强制居中模式 (解决偏左问题)
             centeredSlides: true,
-            // 自动计算每屏显示的数量 (根据 CSS 里的 width)
+            
+            // 2. 自动宽度模式
             slidesPerView: "auto",
-            // 幻灯片之间的间距
-            spaceBetween: 30,
-            // 开启无限循环
+            
+            // 3. 开启循环
             loop: true,
-            // 开启自动播放
+            
+            // 4. 关键参数：设置循环缓冲数量 (解决计算偏差)
+            // 当 slide 比较宽时，Swiper 需要知道复制多少个 slide 才能填满屏幕
+            // 设置一个大于屏幕能显示数量的值，比如 6
+            loopedSlides: 6,
+
+            spaceBetween: 20, // 减小间距，让聚焦更紧凑
+
             autoplay: {
-                delay: 2000, // 🌟 停顿 2秒
-                disableOnInteraction: false, // 用户滑动后继续自动播放
+                delay: 2000, // 停顿 2 秒
+                disableOnInteraction: false, 
             },
-            // 切换速度 (毫秒)，让过渡更平滑
-            speed: 800, 
-            // 鼠标滚轮控制 (可选)
-            mousewheel: false,
-            // 键盘控制 (可选)
-            keyboard: true,
-            // 抓手光标
+            speed: 600, // 切换速度
+            
+            // 抓手光标，提升体验
             grabCursor: true,
+            
+            // 允许点击两侧的 slide 切换到中间
+            slideToClickedSlide: true
         });
     </script>
 
