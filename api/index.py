@@ -2,6 +2,7 @@ import os
 from flask import Flask, render_template, request, redirect, url_for
 from supabase import create_client, Client
 from datetime import datetime
+import random
 
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
 
@@ -21,12 +22,20 @@ ALBUM_DESCRIPTIONS = {
 
 @app.route('/')
 def home():
-    # 首页逻辑保持不变
+    # 1. 获取所有照片数据 (用来做相册分类)
     response = supabase.table('photos').select("*").order('created_at', desc=True).execute()
-    data = response.data
-    albums_dict = {}
+    all_data = response.data
 
-    for item in data:
+    # 🟢 2. 新增：随机抽取 10 张照片做“滚动展示”
+    # 如果照片总数少于 10 张，就全拿出来；否则随机抽 10 张
+    if len(all_data) > 10:
+        hero_photos = random.sample(all_data, 10)
+    else:
+        hero_photos = all_data
+
+    # 3. 原有的相册分类逻辑 (保持不变)
+    albums_dict = {}
+    for item in all_data:
         album_name = item.get('album', '默认相簿')
         if album_name not in albums_dict:
             albums_dict[album_name] = {
@@ -36,7 +45,10 @@ def home():
             }
         albums_dict[album_name]['count'] += 1
     
-    return render_template('index.html', albums=list(albums_dict.values()))
+    # 🟢 4. 传参时多传一个 hero_photos
+    return render_template('index.html', 
+                           albums=list(albums_dict.values()), 
+                           hero_photos=hero_photos)
 
 @app.route('/album/<album_name>')
 def show_album(album_name):

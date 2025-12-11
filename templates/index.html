@@ -3,36 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的相簿集</title>
+    <title>OREO 的摄影集</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 🟢 定义滚动动画 */
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); } /* 移动一半的距离 */
+        }
+        .animate-scroll {
+            display: flex;
+            width: max-content; /* 让宽度自适应内容 */
+            animation: scroll 30s linear infinite; /* 30秒滚完一圈，无限循环 */
+        }
+        /* 鼠标悬停时暂停滚动，方便用户看照片 */
+        .scroll-container:hover .animate-scroll {
+            animation-play-state: paused;
+        }
+    </style>
 </head>
 <body class="bg-neutral-900 text-white min-h-screen font-sans">
 
-    <header class="py-16 px-6 text-center">
-        <h1 class="text-5xl font-bold tracking-tight mb-2">慕心水誥</h1>
-        <p class="text-neutral-400">这是我自 2020 年以来拍摄的所有照片的展示</p>
+    {% if hero_photos %}
+    <div class="relative w-full overflow-hidden border-b border-neutral-800 bg-black/50 py-8 scroll-container">
+        <div class="animate-scroll gap-6 px-6">
+            {% for photo in hero_photos %}
+            <div class="relative w-64 h-48 flex-shrink-0 rounded-lg overflow-hidden shadow-2xl group cursor-pointer transition-transform hover:scale-105">
+                <img src="{{ photo.url }}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                <div class="absolute bottom-2 left-2 text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md">
+                    {{ photo.title }}
+                </div>
+            </div>
+            {% endfor %}
+
+            {% for photo in hero_photos %}
+            <div class="relative w-64 h-48 flex-shrink-0 rounded-lg overflow-hidden shadow-2xl group cursor-pointer transition-transform hover:scale-105">
+                <img src="{{ photo.url }}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                <div class="absolute bottom-2 left-2 text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md">
+                    {{ photo.title }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="absolute top-0 left-0 h-full w-16 bg-gradient-to-r from-neutral-900 to-transparent z-10 pointer-events-none"></div>
+        <div class="absolute top-0 right-0 h-full w-16 bg-gradient-to-l from-neutral-900 to-transparent z-10 pointer-events-none"></div>
+    </div>
+    {% endif %}
+
+    <header class="py-12 md:py-20 px-4 text-center">
+        <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
+            OREO 的摄影集
+        </h1>
+        <p class="text-neutral-400 text-lg md:text-xl font-light tracking-wide">
+            记录光影，定格瞬间。
+        </p>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 pb-20">
+    <main class="max-w-7xl mx-auto px-4 pb-20">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            
             {% for album in albums %}
-            <a href="/album/{{ album.name }}" class="group block">
-                <div class="relative overflow-hidden rounded-xl aspect-[4/3] bg-neutral-800">
-                    <img src="{{ album.cover }}" alt="{{ album.name }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100">
-                    
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-6">
-                        <h2 class="text-2xl font-bold group-hover:text-yellow-400 transition-colors">{{ album.name }}</h2>
-                        <p class="text-sm text-neutral-300">{{ album.count }} 张照片</p>
-                    </div>
+            <a href="/album/{{ album.name }}" class="group block relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer">
+                <img src="{{ album.cover }}" alt="{{ album.name }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100">
+                
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 transition-opacity"></div>
+                
+                <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                    <h2 class="text-3xl font-bold text-white mb-1">{{ album.name }}</h2>
+                    <p class="text-green-400 text-sm font-medium uppercase tracking-widest">{{ album.count }} 张照片</p>
                 </div>
             </a>
             {% endfor %}
-
         </div>
+
+        <a href="/upload" class="fixed bottom-8 right-8 bg-green-600 hover:bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 text-2xl font-bold z-50">
+            +
+        </a>
     </main>
-<a href="/upload" class="fixed bottom-8 right-8 bg-green-600 hover:bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 text-2xl font-bold z-50">
-    +
-</a>
+
 </body>
 </html>
