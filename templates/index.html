@@ -11,51 +11,45 @@
         /* 容器样式 */
         .swiper {
             width: 100%;
-            padding-top: 40px;
-            padding-bottom: 40px;
+            padding-top: 50px;
+            padding-bottom: 50px;
             background-color: transparent;
         }
 
-        /* 🎨 核心修复逻辑：
-           我们设定所有幻灯片默认都是“缩小且半透明”的 (Inactive 状态)
-           只有当它拥有 .swiper-slide-active 类时，才恢复正常大小。
+        /* 🎨 Coverflow 模式下的 Slide 样式 
+           注意：这里不需要写 transform: scale 了，Swiper 会自动算
         */
         .swiper-slide {
-            /* 设置为固定宽度，或者屏幕宽度的百分比 
-              手机端占 70%，电脑端固定 400px，这样更容易居中
-            */
-            width: 70%; 
-            height: 220px;
-            
-            /* 默认状态：非中心图片 */
-            transform: scale(0.85); /* 缩小 */
-            opacity: 0.4;           /* 变暗 */
-            filter: blur(1px);      /* 轻微模糊，增强景深感 */
-            
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* 丝滑过渡 */
+            background-position: center;
+            background-size: cover;
+            width: 300px; /* 基础宽度 */
+            height: 200px; /* 基础高度 */
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            /* 给一个稍微透明的初始状态 */
+            opacity: 0.6; 
+            transition: opacity 0.3s;
+            /* 强制自身居中，防止偏移 */
+            margin-left: auto; 
+            margin-right: auto;
+            /* 阴影 */
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
         }
 
-        /* 电脑端宽度调整 */
+        /* 电脑端加宽 */
         @media (min-width: 768px) {
             .swiper-slide {
-                width: 450px; /* 电脑上大一点 */
-                height: 300px;
+                width: 480px;
+                height: 320px;
             }
         }
 
-        /* 🌟 C位样式：当前激活的那张 */
+        /* 🌟 激活状态 (C位) */
         .swiper-slide-active {
-            /* 恢复原始大小 (这就相当于放大了) */
-            transform: scale(1); 
-            opacity: 1;
-            filter: blur(0);
-            z-index: 10;
-            /* 强烈的阴影和边框，强调 C 位 */
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-            border: 1px solid rgba(255,255,255,0.2);
+            opacity: 1; /* 只有中间的是完全不透明的 */
+            /* 加上边框让它更显眼 */
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
         }
 
         .swiper-slide img {
@@ -88,10 +82,10 @@
 
     <header class="py-10 md:py-16 px-4 text-center">
         <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
-            OREO 的摄影集
+            慕心水誥
         </h1>
         <p class="text-neutral-400 text-lg md:text-xl font-light tracking-wide">
-            记录光影，定格瞬间。
+             2020-2025
         </p>
     </header>
 
@@ -123,34 +117,36 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
     <script>
-        // 🟢 修复后的 JS 配置
         var swiper = new Swiper(".mySwiper", {
-            // 1. 强制居中模式 (解决偏左问题)
-            centeredSlides: true,
-            
-            // 2. 自动宽度模式
-            slidesPerView: "auto",
-            
-            // 3. 开启循环
-            loop: true,
-            
-            // 4. 关键参数：设置循环缓冲数量 (解决计算偏差)
-            // 当 slide 比较宽时，Swiper 需要知道复制多少个 slide 才能填满屏幕
-            // 设置一个大于屏幕能显示数量的值，比如 6
-            loopedSlides: 6,
-
-            spaceBetween: 20, // 减小间距，让聚焦更紧凑
-
-            autoplay: {
-                delay: 2000, // 停顿 2 秒
-                disableOnInteraction: false, 
-            },
-            speed: 600, // 切换速度
-            
-            // 抓手光标，提升体验
+            // 启用 Coverflow 3D 效果 (解决居中和放大最完美的方式)
+            effect: "coverflow",
             grabCursor: true,
             
-            // 允许点击两侧的 slide 切换到中间
+            // 确保居中
+            centeredSlides: true,
+            // 自动计算宽度
+            slidesPerView: "auto",
+            
+            // 3D 参数微调
+            coverflowEffect: {
+                rotate: 0,      // 不旋转，保持平直
+                stretch: 0,     // 拉伸度
+                depth: 150,     // 🌟 深度：这个值越大，中间凸起越明显，两边越小
+                modifier: 1,
+                slideShadows: true, // 开启阴影，让立体感更强
+            },
+
+            loop: true,
+            // 增加循环缓冲，防止计算偏差
+            loopedSlides: 5,
+            
+            autoplay: {
+                delay: 2000, // 停顿 2秒
+                disableOnInteraction: false,
+            },
+            speed: 800,
+            
+            // 允许点击切换
             slideToClickedSlide: true
         });
     </script>
