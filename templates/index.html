@@ -1,11 +1,48 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>慕心水誥</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // 关键：允许手动切换
+            theme: {
+                extend: {
+                    colors: {
+                        // 自定义一些柔和的白色，避免亮瞎眼
+                        lightBg: '#f8fafc', 
+                        lightCard: '#ffffff',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script>
+        // 初始化逻辑：
+        // 1. 如果本地存储了 'theme'，就用存储的
+        // 2. 如果没存储，就看系统的 'prefers-color-scheme'
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+
+        // 切换函数
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light'; // 记住用户的选择
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+    </script>
     
     <style>
         /* 容器样式 */
@@ -15,22 +52,16 @@
             padding-bottom: 50px;
         }
 
-        /* 📦 外层盒子：负责占位和布局 
-           1. 必须固定宽高
-           2. 绝对不要加 transform/scale，否则计算会歪
-        */
+        /* 外层盒子 */
         .swiper-slide {
             width: 320px; 
             height: 220px;
-            /* 这里的背景要透明，因为实际内容在里面 */
             background: transparent;
-            /* 居中对齐辅助 */
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* 电脑端宽度 */
         @media (min-width: 768px) {
             .swiper-slide {
                 width: 480px;
@@ -38,9 +69,7 @@
             }
         }
 
-        /* 🖼 内层盒子：负责视觉效果 (缩放、阴影、圆角) 
-           所有的动画都发生在这里面，不会影响 Swiper 的排版计算
-        */
+        /* 内层盒子：负责视觉效果 */
         .slide-inner {
             width: 100%;
             height: 100%;
@@ -49,22 +78,36 @@
             background-position: center;
             background-size: cover;
             
-            /* 默认状态：缩小、变暗 */
-            transform: scale(0.85);
-            opacity: 0.4;
-            filter: blur(1px);
-            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 丝滑过渡 */
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            /* 默认状态 */
+            transform: scale(0.9); 
+            opacity: 0.6; /* 浅色模式下稍微透明一点 */
+            filter: grayscale(20%); /* 浅色模式下加一点黑白滤镜，更有质感 */
+            
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* 浅色阴影 */
         }
 
-        /* 🌟 激活状态：当外层盒子被 Swiper 选中时
-           内层盒子恢复原状 (看起来就是变大了)
-        */
+        /* 深色模式下的默认状态 */
+        .dark .slide-inner {
+            opacity: 0.4;
+            filter: blur(1px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* 激活状态 (C位) */
         .swiper-slide-active .slide-inner {
-            transform: scale(1); /* 恢复原大 */
-            opacity: 1;          /* 变亮 */
-            filter: blur(0);     /* 变清晰 */
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6); /* 强阴影 */
+            transform: scale(1);
+            opacity: 1;
+            filter: none; /* 去掉滤镜 */
+            
+            /* 浅色模式的高亮样式 */
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* 深色模式的高亮样式 */
+        .dark .swiper-slide-active .slide-inner {
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
             border: 1px solid rgba(255,255,255,0.2);
         }
 
@@ -76,7 +119,12 @@
         }
     </style>
 </head>
-<body class="bg-neutral-900 text-white min-h-screen font-sans">
+<body class="bg-lightBg text-neutral-900 dark:bg-neutral-900 dark:text-white min-h-screen font-sans transition-colors duration-300">
+
+    <button onclick="toggleTheme()" class="fixed top-6 right-6 z-50 p-3 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-lg hover:scale-110 transition-transform backdrop-blur-md border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-yellow-400">
+        <svg class="w-6 h-6 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        <svg class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+    </button>
 
     {% if hero_photos %}
     <div class="relative w-full overflow-hidden mt-6 mb-6">
@@ -86,7 +134,7 @@
                 <div class="swiper-slide cursor-pointer group">
                     <div class="slide-inner relative">
                         <img src="{{ photo.url }}" loading="lazy">
-                        <div class="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
+                        <div class="absolute inset-0 bg-white/10 dark:bg-black/10 group-hover:bg-white/20 dark:group-hover:bg-black/20 transition-colors"></div>
                         <div class="absolute bottom-4 left-4 text-sm font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md">
                             {{ photo.title }}
                         </div>
@@ -99,28 +147,30 @@
     {% endif %}
 
     <header class="py-10 md:py-16 px-4 text-center">
-        <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">
+        <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-500">
             慕心水誥
         </h1>
-        <p class="text-neutral-400 text-lg md:text-xl font-light tracking-wide">
+        <p class="text-neutral-500 dark:text-neutral-400 text-lg md:text-xl font-light tracking-wide">
             2020 - 2025
         </p>
     </header>
 
     <main class="max-w-7xl mx-auto px-4 pb-32">
         {% if albums|length == 0 %}
-            <div class="text-center text-neutral-600 py-20">
+            <div class="text-center text-neutral-500 dark:text-neutral-600 py-20">
                 <p>暂无相簿，点击右下角上传第一张照片吧！</p>
             </div>
         {% else %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {% for album in albums %}
-                <a href="/album/{{ album.name }}" class="group block relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-neutral-800">
+                <a href="/album/{{ album.name }}" class="group block relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer bg-white dark:bg-neutral-800 shadow-lg hover:shadow-2xl dark:shadow-none transition-all duration-500 hover:-translate-y-1">
                     <img src="{{ album.cover }}" alt="{{ album.name }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent dark:from-black/90 dark:via-black/20 dark:to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
+                    
                     <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                        <h2 class="text-3xl font-bold text-white mb-1 drop-shadow-lg">{{ album.name }}</h2>
-                        <p class="text-green-400 text-sm font-medium uppercase tracking-widest">{{ album.count }} 张照片</p>
+                        <h2 class="text-3xl font-bold text-white mb-1 drop-shadow-md">{{ album.name }}</h2>
+                        <p class="text-green-300 dark:text-green-400 text-sm font-medium uppercase tracking-widest">{{ album.count }} 张照片</p>
                     </div>
                 </a>
                 {% endfor %}
@@ -136,29 +186,19 @@
 
     <script>
         var swiper = new Swiper(".mySwiper", {
-            // 🌟 核心参数：
             centeredSlides: true,
             slidesPerView: "auto",
-            
-            // 间距设为 0，因为我们用内层盒子的 scale(0.85) 制造了视觉间距
-            // 这样计算中心点最准
             spaceBetween: 0, 
-
             loop: true,
-            // 增加缓冲幻灯片数量，防止滚动时计算断档
             loopedSlides: 8, 
-            
             autoplay: {
                 delay: 2000, 
                 disableOnInteraction: false,
                 pauseOnMouseEnter: true
             },
-            
             speed: 800,
             grabCursor: true,
             slideToClickedSlide: true,
-            
-            // 开启观察者模式，防止页面加载时宽高计算错误
             observer: true,
             observeParents: true,
         });
