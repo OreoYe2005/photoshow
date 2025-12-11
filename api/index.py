@@ -1,6 +1,7 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for
 from supabase import create_client, Client
+from datetime import datetime
 
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
 
@@ -39,24 +40,48 @@ def home():
 
 @app.route('/album/<album_name>')
 def show_album(album_name):
-    # 1. 获取照片
-    response = supabase.table('photos').select("*").eq('album', album_name).execute()
-    photos = []
+    # 1. 获取照片 (确保按时间倒序排列)
+    response = supabase.table('photos').select("*").eq('album', album_name).order('created_at', desc=True).execute()
+    
+    # 2. 分组逻辑
+    grouped_photos = []
     
     for item in response.data:
-        photos.append({
+        # 解析时间 (Supabase 返回的是 UTC 时间字符串，如 2025-12-09T...)
+        # 注意：这里简单处理，直接取前7位 (YYYY-MM) 做分组其实最快，但为了格式好看我们转换一下
+        try:
+            # 将字符串转为时间对象
+            dt = datetime.fromisoformat(item['created_at'].replace('Z', '+00:00'))
+            # 格式化成 "2025年12月"
+            date_label = dt.strftime('%Y年%m月')
+        except:
+            date_label = "未知日期"
+
+        # 处理照片数据对象
+        photo_data = {
             "src": item['url'],
             "title": item['title'],
-            "description": item.get('description', '') # 获取数据库里的描述，如果没有就是空
-        })
+            "description": item.get('description', '')
+        }
+
+        # 核心算法：如果你是列表里的第一个，或者你的日期和上一组不一样，就新建一组
+        if not grouped_photos or grouped_photos[-1]['date'] != date_label:
+            grouped_photos.append({
+                "date": date_label,
+                "photos": []
+            })
+        
+        # 把照片塞进最后一组里
+        grouped_photos[-1]['photos'].append(photo_data)
     
-    # 2. 获取相簿说明 (如果代码里没配置，就显示默认文字)
+    # 获取相簿说明
     album_desc = ALBUM_DESCRIPTIONS.get(album_name, "这是一个精选相簿。")
 
+    # 注意：这里传给前端的变量名变了，以前叫 photos，现在叫 grouped_photos
     return render_template('album.html', 
                            album_name=album_name, 
-                           album_desc=album_desc, # 传给前端
-                           photos=photos)
+                           album_desc=album_desc, 
+                           grouped_photos=grouped_photos)
 
 @app.route('/upload')
 def upload_page():
