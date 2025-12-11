@@ -11,31 +11,23 @@
         /* 容器样式 */
         .swiper {
             width: 100%;
-            padding-top: 40px;
-            padding-bottom: 40px;
-            /* 关键：防止容器本身有内边距导致计算偏差 */
-            box-sizing: border-box; 
+            padding-top: 50px;
+            padding-bottom: 50px;
         }
 
-        /* 🎨 Slide 样式 */
+        /* 📦 外层盒子：负责占位和布局 
+           1. 必须固定宽高
+           2. 绝对不要加 transform/scale，否则计算会歪
+        */
         .swiper-slide {
-            /* 关键修复：宽高必须是固定的数值，Swiper 才能算准中心点 */
             width: 320px; 
             height: 220px;
-            
-            background-position: center;
-            background-size: cover;
-            border-radius: 8px;
-            
-            /* 默认状态：稍微变暗，变小一点点 (用 CSS scale 性能最好) */
-            opacity: 0.4;
-            transform: scale(0.9); /* 稍微缩小两边的 */
-            transition: all 0.4s ease; /* 平滑过渡 */
-            
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            
-            /* ❌ 绝对不要在这里写 margin: auto，这会破坏居中！ */
+            /* 这里的背景要透明，因为实际内容在里面 */
+            background: transparent;
+            /* 居中对齐辅助 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         /* 电脑端宽度 */
@@ -46,16 +38,37 @@
             }
         }
 
-        /* 🌟 激活状态 (C位) */
-        .swiper-slide-active {
-            opacity: 1;      /* 完全不透明 */
+        /* 🖼 内层盒子：负责视觉效果 (缩放、阴影、圆角) 
+           所有的动画都发生在这里面，不会影响 Swiper 的排版计算
+        */
+        .slide-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            background-position: center;
+            background-size: cover;
+            
+            /* 默认状态：缩小、变暗 */
+            transform: scale(0.85);
+            opacity: 0.4;
+            filter: blur(1px);
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 丝滑过渡 */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* 🌟 激活状态：当外层盒子被 Swiper 选中时
+           内层盒子恢复原状 (看起来就是变大了)
+        */
+        .swiper-slide-active .slide-inner {
             transform: scale(1); /* 恢复原大 */
-            z-index: 10;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            opacity: 1;          /* 变亮 */
+            filter: blur(0);     /* 变清晰 */
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); /* 强阴影 */
             border: 1px solid rgba(255,255,255,0.2);
         }
 
-        .swiper-slide img {
+        .slide-inner img {
             display: block;
             width: 100%;
             height: 100%;
@@ -70,11 +83,13 @@
         <div class="swiper mySwiper">
             <div class="swiper-wrapper">
                 {% for photo in hero_photos %}
-                <div class="swiper-slide relative group cursor-pointer">
-                    <img src="{{ photo.url }}" loading="lazy" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors"></div>
-                    <div class="absolute bottom-4 left-4 text-sm font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md">
-                        {{ photo.title }}
+                <div class="swiper-slide cursor-pointer group">
+                    <div class="slide-inner relative">
+                        <img src="{{ photo.url }}" loading="lazy">
+                        <div class="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
+                        <div class="absolute bottom-4 left-4 text-sm font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md">
+                            {{ photo.title }}
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -88,7 +103,7 @@
             慕心水誥
         </h1>
         <p class="text-neutral-400 text-lg md:text-xl font-light tracking-wide">
-            2020-2025
+            2020 - 2025
         </p>
     </header>
 
@@ -121,30 +136,31 @@
 
     <script>
         var swiper = new Swiper(".mySwiper", {
-            // 🌟 1. 核心居中参数
+            // 🌟 核心参数：
             centeredSlides: true,
             slidesPerView: "auto",
             
-            // 🌟 2. 循环参数优化 (解决不居中和跳变的关键)
-            loop: true,
-            loopedSlides: 10, // 增加缓冲数量，确保左右两边都有足够的图
-            
-            spaceBetween: 20, // 间距
-            
-            // 🌟 3. 渲染监听 (防止加载慢导致的错位)
-            observer: true,
-            observeParents: true,
+            // 间距设为 0，因为我们用内层盒子的 scale(0.85) 制造了视觉间距
+            // 这样计算中心点最准
+            spaceBetween: 0, 
 
+            loop: true,
+            // 增加缓冲幻灯片数量，防止滚动时计算断档
+            loopedSlides: 8, 
+            
             autoplay: {
                 delay: 2000, 
                 disableOnInteraction: false,
-                pauseOnMouseEnter: true,
+                pauseOnMouseEnter: true
             },
             
-            speed: 600,
+            speed: 800,
             grabCursor: true,
             slideToClickedSlide: true,
-            roundLengths: true
+            
+            // 开启观察者模式，防止页面加载时宽高计算错误
+            observer: true,
+            observeParents: true,
         });
     </script>
 
