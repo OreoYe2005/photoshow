@@ -8,35 +8,43 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     
     <style>
-        /* 容器样式 */
+        /* 容器优化 */
         .swiper {
             width: 100%;
             padding-top: 50px;
             padding-bottom: 50px;
             background-color: transparent;
+            /* 防止容器边缘裁剪导致的闪烁 */
+            perspective: 1200px; 
         }
 
-        /* 🎨 Coverflow 模式下的 Slide 样式 
-           注意：这里不需要写 transform: scale 了，Swiper 会自动算
-        */
+        /* 🎨 Slide 样式优化 */
         .swiper-slide {
             background-position: center;
             background-size: cover;
-            width: 300px; /* 基础宽度 */
-            height: 200px; /* 基础高度 */
+            width: 300px;
+            height: 200px;
             border-radius: 12px;
-            overflow: hidden;
-            /* 给一个稍微透明的初始状态 */
+            /* 基础状态：半透明 */
             opacity: 0.6; 
-            transition: opacity 0.3s;
-            /* 强制自身居中，防止偏移 */
+            
+            /* ⚡️ 核心优化：开启硬件加速，防止卡顿 */
+            transform: translate3d(0,0,0);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            will-change: transform, opacity; /* 告诉浏览器这个元素要动 */
+            
+            /* 只对 opacity 做过渡，transform 交给 Swiper 里的 JS 控制，避免 CSS 冲突 */
+            transition: opacity 0.4s ease-out;
+            
             margin-left: auto; 
             margin-right: auto;
-            /* 阴影 */
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            
+            /* 阴影优化：不要用太大的扩散半径，影响性能 */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            overflow: hidden;
         }
 
-        /* 电脑端加宽 */
         @media (min-width: 768px) {
             .swiper-slide {
                 width: 480px;
@@ -44,12 +52,13 @@
             }
         }
 
-        /* 🌟 激活状态 (C位) */
+        /* 🌟 激活状态 */
         .swiper-slide-active {
-            opacity: 1; /* 只有中间的是完全不透明的 */
-            /* 加上边框让它更显眼 */
-            border: 1px solid rgba(255,255,255,0.3);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            opacity: 1;
+            z-index: 10;
+            border: 1px solid rgba(255,255,255,0.2);
+            /* 激活时加重阴影 */
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         }
 
         .swiper-slide img {
@@ -57,6 +66,8 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            /* 图片也开启硬件加速 */
+            transform: translate3d(0,0,0);
         }
     </style>
 </head>
