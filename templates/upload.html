@@ -7,61 +7,98 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
-</head>
-<body class="bg-neutral-900 text-white flex items-center justify-center min-h-screen">
 
-    <div class="bg-neutral-800 p-8 rounded-xl shadow-2xl w-full max-w-md">
-        <h1 class="text-2xl font-bold mb-6 text-center text-green-400">上传新作品</h1>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        lightBg: '#f8fafc', 
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script>
+        // 自动读取本地存储的主题设置
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        }
+    </script>
+</head>
+<body class="bg-lightBg text-neutral-900 dark:bg-neutral-900 dark:text-white flex items-center justify-center min-h-screen transition-colors duration-300">
+
+    <button onclick="toggleTheme()" class="fixed top-6 right-6 z-50 p-3 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-lg hover:scale-110 transition-transform backdrop-blur-md border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-yellow-400">
+        <svg class="w-6 h-6 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        <svg class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+    </button>
+
+    <div class="bg-white dark:bg-neutral-800 p-8 rounded-xl shadow-xl w-full max-w-md transition-colors duration-300 border border-neutral-100 dark:border-neutral-700">
+        <h1 class="text-2xl font-bold mb-6 text-center text-green-600 dark:text-green-400">上传新作品</h1>
         
         <form id="uploadForm" class="space-y-4">
             <div>
-                <label class="block mb-2 text-sm text-neutral-400">选择照片</label>
+                <label class="block mb-2 text-sm text-neutral-600 dark:text-neutral-400">选择照片</label>
                 <input type="file" id="fileInput" accept="image/*" multiple required
-                    class="block w-full text-sm text-neutral-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-500">
+                    class="block w-full text-sm text-neutral-700 dark:text-neutral-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-500 cursor-pointer">
             </div>
 
-            <div class="p-4 bg-neutral-700/50 rounded-lg border border-neutral-600">
-                <p class="text-xs text-green-400 mb-3 font-bold uppercase tracking-wider">📂 相簿设置</p>
+            <div class="p-4 bg-neutral-50 dark:bg-neutral-700/50 rounded-lg border border-neutral-200 dark:border-neutral-600 transition-colors">
+                <p class="text-xs text-green-600 dark:text-green-400 mb-3 font-bold uppercase tracking-wider">📂 相簿设置</p>
                 
                 <div class="mb-3">
-                    <label class="block mb-1 text-xs text-neutral-400">相簿名称</label>
+                    <label class="block mb-1 text-xs text-neutral-500 dark:text-neutral-400">相簿名称</label>
                     <input type="text" id="albumInput" placeholder="例如：风光" required
-                        class="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded text-sm focus:outline-none focus:border-green-500">
+                        class="w-full px-3 py-2 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded text-sm text-neutral-900 dark:text-white focus:outline-none focus:border-green-500 transition-colors">
                 </div>
                 
                 <div>
-                    <label class="block mb-1 text-xs text-neutral-400">相簿简介 (如果是新建相簿，请填写)</label>
+                    <label class="block mb-1 text-xs text-neutral-500 dark:text-neutral-400">相簿简介 (新建时填写)</label>
                     <textarea id="albumDescInput" rows="2" placeholder="这个相簿是关于..." 
-                        class="w-full px-3 py-2 bg-neutral-800 border border-neutral-600 rounded text-sm focus:outline-none focus:border-green-500"></textarea>
+                        class="w-full px-3 py-2 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded text-sm text-neutral-900 dark:text-white focus:outline-none focus:border-green-500 transition-colors"></textarea>
                 </div>
             </div>
             
             <div>
-                <label class="block mb-2 text-sm text-neutral-400">照片描述 (每张照片都会用这个)</label>
+                <label class="block mb-2 text-sm text-neutral-600 dark:text-neutral-400">照片描述 (每张照片通用)</label>
                 <textarea id="descInput" rows="2" placeholder="拍摄于..." 
-                    class="w-full px-4 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:border-green-500"></textarea>
+                    class="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded text-neutral-900 dark:text-white focus:outline-none focus:border-green-500 transition-colors"></textarea>
             </div>
 
             <div>
-                <label class="block mb-2 text-sm text-neutral-400">管理员密码</label>
+                <label class="block mb-2 text-sm text-neutral-600 dark:text-neutral-400">管理员密码</label>
                 <input type="password" id="passwordInput" required
-                    class="w-full px-4 py-2 bg-neutral-700 border border-neutral-600 rounded focus:outline-none focus:border-green-500">
+                    class="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded text-neutral-900 dark:text-white focus:outline-none focus:border-green-500 transition-colors">
             </div>
 
             <div id="statusArea" class="hidden">
-                <div class="w-full bg-neutral-700 rounded-full h-2.5">
+                <div class="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2.5">
                     <div id="progressBar" class="bg-green-600 h-2.5 rounded-full" style="width: 0%"></div>
                 </div>
-                <p id="statusText" class="text-xs text-center mt-2 text-neutral-400">准备上传...</p>
+                <p id="statusText" class="text-xs text-center mt-2 text-neutral-500 dark:text-neutral-400">准备上传...</p>
             </div>
 
-            <button type="submit" id="submitBtn" class="w-full bg-green-600 text-white font-bold py-3 rounded hover:bg-green-500 transition-colors">
+            <button type="submit" id="submitBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded shadow-lg transition-all hover:scale-[1.02]">
                 开始上传 🚀
             </button>
         </form>
         
         <div class="mt-4 text-center">
-             <a href="/" class="text-neutral-500 text-sm hover:text-white">← 返回首页</a>
+             <a href="/" class="text-neutral-500 hover:text-green-600 dark:hover:text-white transition-colors text-sm">← 返回首页</a>
         </div>
     </div>
 
@@ -93,7 +130,7 @@
 
             const files = document.getElementById('fileInput').files;
             const albumName = document.getElementById('albumInput').value || "未分类";
-            const albumDesc = document.getElementById('albumDescInput').value; // 获取相簿简介
+            const albumDesc = document.getElementById('albumDescInput').value;
             const photoDesc = document.getElementById('descInput').value || "";
 
             if (files.length === 0) return;
@@ -108,27 +145,17 @@
             statusArea.classList.remove('hidden');
 
             try {
-                // 🟢 关键步骤：如果有填写相簿简介，先更新 albums 表
-                // 我们使用 upsert (插入或更新)，这样如果相簿已存在，就更新它的简介
                 if (albumDesc) {
                     statusText.innerText = `正在更新相簿信息...`;
-                    
-                    // 先查询这个相簿是否存在，为了获取 ID (或者利用 name 作为唯一键)
-                    // 这里我们利用 Supabase 的 upsert 功能，依赖 name 列的 unique 属性
                     const { error: albumError } = await supabase
                         .from('albums')
                         .upsert({ 
                             name: albumName, 
                             description: albumDesc 
-                        }, { onConflict: 'name' }); // 遇到同名就更新
-
-                    if (albumError) {
-                        console.error("相簿信息更新失败", albumError);
-                        // 即使相簿简介失败，也可以继续传照片，不阻塞流程
-                    }
+                        }, { onConflict: 'name' }); 
+                    if (albumError) console.error("相簿信息更新失败", albumError);
                 }
 
-                // 下面是正常的照片上传流程
                 let successCount = 0;
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
