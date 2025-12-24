@@ -6,7 +6,6 @@
     <title>注册 | OREO</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -40,19 +39,19 @@
     </div>
 
     <script>
-        // 🛑 调试步骤 1: 检查库是否加载
-        console.log("页面加载中...");
-        if (!window.supabase) {
-            alert("❌ 致命错误：Supabase JS 库未加载！\n请检查你的 VPN 是否正常，或者网络是否屏蔽了 cdn.jsdelivr.net");
-        }
-
+        // 🟢 修复后的检查逻辑：避免直接使用双花括号
         const supabaseUrl = "{{ supabase_url }}";
         const supabaseKey = "{{ supabase_key }}";
         
-        // 检查后端是否正确传递了参数
-        if (!supabaseUrl || supabaseUrl.includes("{{")) {
-            console.error("Supabase 配置为空！");
-            alert("❌ 后端错误：Supabase URL/Key 没有正确传递过来。\n请确保你是通过 python api/index.py 运行的，而不是直接打开 html 文件。");
+        // 1. 检查 Supabase 库是否加载
+        if (!window.supabase) {
+            alert("❌ 致命错误：Supabase JS 库未加载！\n请检查网络连接 (VPN)");
+        }
+        
+        // 2. 检查后端参数 (不再检查花括号，改用长度检查)
+        if (!supabaseUrl || supabaseUrl.length < 10) {
+            console.error("Supabase 配置异常");
+            alert("❌ 后端错误：Supabase URL 似乎没有正确传递。\n请确保 api/index.py 配置正确。");
         }
 
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -60,48 +59,47 @@
         const btn = document.getElementById('submitBtn');
 
         form.addEventListener('submit', async (e) => {
-            // 🛑 调试步骤 2: 监听器触发
             e.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            // 简单的防呆检查
             if (!email || !password) return alert("请填写完整");
             if (password.length < 6) return alert("密码至少需要6位");
 
-            // 🔒 锁定按钮，防止重复点击
             btn.disabled = true;
             btn.innerText = "正在连接服务器...";
 
             try {
-                // 🛑 调试步骤 3: 发起请求
-                console.log("正在向 Supabase 发起注册请求...", email);
-                
+                // 发起注册请求
                 const { data, error } = await supabase.auth.signUp({ 
                     email: email, 
                     password: password 
                 });
 
-                // 🛑 调试步骤 4: 处理结果
                 if (error) {
+                    // 处理注册错误
                     console.error("注册失败:", error);
                     alert("❌ 注册失败: " + error.message);
                     btn.disabled = false;
                     btn.innerText = "注册";
                 } else {
+                    // 注册成功
                     console.log("注册成功:", data);
-                    // 检查是否需要验证邮箱
+                    
+                    // 检查是否卡在邮箱验证
                     if (data.user && !data.session) {
-                        alert("⚠️ 注册成功，但Supabase依然要求验证邮箱！\n请去你的邮箱点击链接，或者去 Supabase 后台关闭 'Confirm Email' 选项。");
+                        alert("⚠️ 注册成功，但可能需要验证邮箱！\n建议去 Supabase 后台关闭 'Confirm Email' 选项以获得最佳体验。");
+                        // 依然跳转，让用户尝试登录
+                        window.location.href = '/login';
                     } else {
                         alert("🎉 注册成功！即将跳转到登录页...");
                         window.location.href = '/login';
                     }
                 }
             } catch (err) {
-                console.error("代码崩溃:", err);
-                alert("❌ 代码运行出错:\n" + err.message);
+                console.error("代码异常:", err);
+                alert("❌ 运行出错:\n" + err.message);
                 btn.disabled = false;
                 btn.innerText = "注册";
             }
