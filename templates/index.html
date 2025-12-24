@@ -19,6 +19,7 @@
     </script>
 
     <script>
+        // 主题初始化
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
         } else {
@@ -34,20 +35,31 @@
     </script>
     
     <style>
-        /* 防止图片撑爆屏幕 */
+        /* 基础重置 */
         img { max-width: 100%; height: auto; display: block; }
         body { margin: 0; font-family: sans-serif; background-color: #f8fafc; color: #171717; }
         .dark body { background-color: #171717; color: #ffffff; }
 
-        /* 强制 Swiper 布局 */
+        /* 导航栏 */
+        .nav-bar {
+            position: absolute; top: 0; left: 0; width: 100%; padding: 1.5rem;
+            display: flex; justify-content: space-between; align-items: center; z-index: 40;
+            box-sizing: border-box;
+        }
+
+        /* 登录按钮样式 (防止 Tailwind 挂了不显示) */
+        .login-btn {
+            background-color: #171717; color: white; padding: 6px 16px; border-radius: 99px; 
+            text-decoration: none; font-size: 14px; font-weight: bold;
+            display: inline-block;
+        }
+        .dark .login-btn { background-color: white; color: black; }
+
+        /* Swiper 样式 */
         .swiper { width: 100%; padding: 40px 0; }
         
-        /* 🌟 恢复之前的“完美滚动”逻辑：
-           外层 slide 固定大小，不缩放；
-           内层 inner 负责缩放动画。
-        */
         .swiper-slide {
-            width: 320px; /* 手机端宽度 */
+            width: 320px; /* 手机端 */
             height: 220px;
             flex-shrink: 0;
             background: transparent;
@@ -60,7 +72,6 @@
         .slide-inner {
             width: 100%; height: 100%; border-radius: 12px; overflow: hidden;
             background-position: center; background-size: cover;
-            /* 默认缩小变暗 */
             transform: scale(0.9); opacity: 0.6; filter: grayscale(20%);
             transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
@@ -71,39 +82,42 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.2);
         }
 
-        /* 强制相册网格 (防止崩坏) */
+        /* 相册网格 */
         .album-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 2rem;
-            padding-bottom: 5rem;
+            display: grid; grid-template-columns: 1fr; gap: 2rem; padding-bottom: 5rem;
         }
         @media (min-width: 768px) { .album-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1024px) { .album-grid { grid-template-columns: repeat(3, 1fr); } }
 
-        /* 强制卡片样式 */
         .album-card {
             position: relative; overflow: hidden; border-radius: 1rem;
-            aspect-ratio: 4/3; background: #e5e5e5;
+            aspect-ratio: 4/3; background: #e5e5e5; display: block;
         }
         .dark .album-card { background: #262626; }
         .album-card img { width: 100%; height: 100%; object-fit: cover; }
         
         /* 上传按钮 */
-        .fab-btn {
+        #uploadBtn {
             position: fixed; bottom: 32px; right: 32px; width: 56px; height: 56px;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             font-size: 24px; font-weight: bold; z-index: 50;
             background-color: #16a34a; color: white; text-decoration: none;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            /* 默认隐藏，必须加 !important 防止样式冲突 */
+            display: none !important; 
         }
+        /* 当 JS 给它加上 .show-upload 类时才显示 */
+        #uploadBtn.show-upload { display: flex !important; }
     </style>
 </head>
 <body class="bg-lightBg text-neutral-900 dark:bg-neutral-900 dark:text-white min-h-screen font-sans transition-colors duration-300">
 
-    <nav class="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-40">
+    <nav class="nav-bar">
         <div class="text-xl font-bold tracking-tight">OREO</div>
-        <div id="userArea" class="flex items-center gap-3"></div>
+        
+        <div id="userArea" class="flex items-center gap-3">
+            <a href="/login" class="login-btn hover:opacity-80 transition">登录</a>
+        </div>
     </nav>
 
     <button onclick="toggleTheme()" class="fixed top-20 right-6 z-50 p-2.5 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-lg border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-yellow-400">
@@ -142,9 +156,9 @@
         {% if albums|length == 0 %}
             <div class="text-center text-neutral-500 py-20">暂无相簿</div>
         {% else %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 album-grid">
+            <div class="album-grid">
                 {% for album in albums %}
-                <a href="/album/{{ album.name }}" class="album-card group block rounded-2xl bg-white dark:bg-neutral-800 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
+                <a href="/album/{{ album.name }}" class="album-card group shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
                     <img src="{{ album.cover }}" class="transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
                     <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
@@ -156,7 +170,7 @@
             </div>
         {% endif %}
 
-        <a href="/upload" id="uploadBtn" class="hidden fab-btn hover:bg-green-500 transition-transform hover:scale-110 hover:rotate-90">
+        <a href="/upload" id="uploadBtn" class="fab-btn hover:bg-green-500 transition-transform hover:scale-110 hover:rotate-90">
             +
         </a>
     </main>
@@ -165,14 +179,14 @@
     <script src="https://cdn.staticfile.org/supabase-js/2.39.3/supabase.min.js"></script>
 
     <script>
-        // 恢复"Inner"模式的 Swiper 配置
+        // Swiper 配置
         var swiper = new Swiper(".mySwiper", {
             centeredSlides: true,
             slidesPerView: "auto",
-            spaceBetween: 0, // 间距设为0，由 slide-inner 缩放产生视觉间距
+            spaceBetween: 0, 
             loop: true,
             loopedSlides: 8, 
-            speed: 800, // 更慢更丝滑
+            speed: 800, 
             grabCursor: true,
             slideToClickedSlide: true,
             observer: true,
@@ -180,26 +194,56 @@
             autoplay: { delay: 2000, disableOnInteraction: false, pauseOnMouseEnter: true },
         });
 
+        // 🟢 Auth 逻辑
         const supabaseUrl = "{{ supabase_url }}";
         const supabaseKey = "{{ supabase_key }}";
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // 🟢 请务必修改这里的管理员邮箱！
         const ADMIN_EMAIL = "admin@oreo.com"; 
 
         async function checkUser() {
-            const { data: { user } } = await supabase.auth.getUser();
-            const userArea = document.getElementById('userArea');
-            const uploadBtn = document.getElementById('uploadBtn');
+            try {
+                // 检查 Supabase 是否加载成功
+                if (!window.supabase) {
+                    console.error("Supabase JS 未加载，请检查网络！");
+                    return;
+                }
+                
+                const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                const userArea = document.getElementById('userArea');
+                const uploadBtn = document.getElementById('uploadBtn');
 
-            if (user) {
-                const isAdmin = user.email === ADMIN_EMAIL;
-                userArea.innerHTML = `<span class="text-sm text-neutral-500 dark:text-neutral-400">Hi, ${user.email.split('@')[0]}</span>
-                    <button onclick="logout()" class="ml-2 text-xs bg-neutral-200 dark:bg-neutral-800 px-3 py-1 rounded-full">退出</button>`;
-                if (isAdmin) uploadBtn.classList.remove('hidden');
-            } else {
-                userArea.innerHTML = `<a href="/login" class="text-sm bg-black text-white px-4 py-1.5 rounded-full">登录</a>`;
+                if (user) {
+                    console.log("当前用户:", user.email);
+                    // 1. 替换登录按钮为用户信息
+                    userArea.innerHTML = `
+                        <span class="text-sm text-neutral-500 dark:text-neutral-400 mr-2">Hi, ${user.email.split('@')[0]}</span>
+                        <button onclick="logout()" class="text-xs bg-neutral-200 dark:bg-neutral-800 px-3 py-1 rounded-full cursor-pointer hover:bg-neutral-300">退出</button>
+                    `;
+                    
+                    // 2. 检查是否为管理员
+                    if (user.email === ADMIN_EMAIL) {
+                        console.log("管理员认证成功，显示上传按钮");
+                        uploadBtn.classList.add('show-upload'); // 添加 CSS 类来显示
+                    }
+                } else {
+                    console.log("未登录用户");
+                    // 保持默认的登录按钮不动
+                }
+            } catch (err) {
+                console.error("Auth Error:", err);
             }
         }
-        async function logout() { await supabase.auth.signOut(); window.location.reload(); }
+
+        async function logout() { 
+            const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            await supabase.auth.signOut(); 
+            window.location.reload(); 
+        }
+
+        // 启动检查
         checkUser();
     </script>
 </body>
