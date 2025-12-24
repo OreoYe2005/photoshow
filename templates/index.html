@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>慕心水誥</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    
+    <script src="https://cdn.staticfile.org/tailwindcss/3.4.1/script.js"></script>
+    
+    <link rel="stylesheet" href="https://cdn.staticfile.org/Swiper/11.0.5/swiper-bundle.min.css" />
     
     <script>
         tailwind.config = {
-            darkMode: 'class', // 关键：允许手动切换
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        // 自定义一些柔和的白色，避免亮瞎眼
                         lightBg: '#f8fafc', 
-                        lightCard: '#ffffff',
                     }
                 }
             }
@@ -23,20 +23,16 @@
     </script>
 
     <script>
-        // 初始化逻辑：
-        // 1. 如果本地存储了 'theme'，就用存储的
-        // 2. 如果没存储，就看系统的 'prefers-color-scheme'
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
         } else {
             document.documentElement.classList.remove('dark')
         }
 
-        // 切换函数
         function toggleTheme() {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
-                localStorage.theme = 'light'; // 记住用户的选择
+                localStorage.theme = 'light';
             } else {
                 document.documentElement.classList.add('dark');
                 localStorage.theme = 'dark';
@@ -45,89 +41,48 @@
     </script>
     
     <style>
-        /* 容器样式 */
-        .swiper {
-            width: 100%;
-            padding-top: 50px;
-            padding-bottom: 50px;
-        }
-
-        /* 外层盒子 */
+        .swiper { width: 100%; padding-top: 50px; padding-bottom: 50px; }
         .swiper-slide {
-            width: 320px; 
-            height: 220px;
+            width: 320px; height: 220px;
             background: transparent;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex; justify-content: center; align-items: center;
         }
-
-        @media (min-width: 768px) {
-            .swiper-slide {
-                width: 480px;
-                height: 320px;
-            }
-        }
-
-        /* 内层盒子：负责视觉效果 */
+        @media (min-width: 768px) { .swiper-slide { width: 480px; height: 320px; } }
+        
         .slide-inner {
-            width: 100%;
-            height: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            background-position: center;
-            background-size: cover;
-            
-            /* 默认状态 */
-            transform: scale(0.9); 
-            opacity: 0.6; /* 浅色模式下稍微透明一点 */
-            filter: grayscale(20%); /* 浅色模式下加一点黑白滤镜，更有质感 */
-            
+            width: 100%; height: 100%; border-radius: 12px; overflow: hidden;
+            background-position: center; background-size: cover;
+            transform: scale(0.9); opacity: 0.6; filter: grayscale(20%);
             transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* 浅色阴影 */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-
-        /* 深色模式下的默认状态 */
-        .dark .slide-inner {
-            opacity: 0.4;
-            filter: blur(1px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        /* 激活状态 (C位) */
+        .dark .slide-inner { opacity: 0.4; filter: blur(1px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        
         .swiper-slide-active .slide-inner {
-            transform: scale(1);
-            opacity: 1;
-            filter: none; /* 去掉滤镜 */
-            
-            /* 浅色模式的高亮样式 */
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-            border: 1px solid rgba(0,0,0,0.05);
+            transform: scale(1); opacity: 1; filter: none;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.05);
         }
-
-        /* 深色模式的高亮样式 */
         .dark .swiper-slide-active .slide-inner {
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2);
         }
-
-        .slide-inner img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        .slide-inner img { display: block; width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body class="bg-lightBg text-neutral-900 dark:bg-neutral-900 dark:text-white min-h-screen font-sans transition-colors duration-300">
 
-    <button onclick="toggleTheme()" class="fixed top-6 right-6 z-50 p-3 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-lg hover:scale-110 transition-transform backdrop-blur-md border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-yellow-400">
-        <svg class="w-6 h-6 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-        <svg class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+    <nav class="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center z-40">
+        <div class="text-xl font-bold tracking-tight">OREO</div>
+        <div id="userArea" class="flex items-center gap-3">
+            </div>
+    </nav>
+
+    <button onclick="toggleTheme()" class="fixed top-20 right-6 z-50 p-2.5 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-lg hover:scale-110 transition-transform backdrop-blur-md border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-yellow-400">
+        <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
     </button>
 
     {% if hero_photos %}
-    <div class="relative w-full overflow-hidden mt-6 mb-6">
+    <div class="relative w-full overflow-hidden mt-12 mb-6">
         <div class="swiper mySwiper">
             <div class="swiper-wrapper">
                 {% for photo in hero_photos %}
@@ -151,23 +106,19 @@
             慕心水誥
         </h1>
         <p class="text-neutral-500 dark:text-neutral-400 text-lg md:text-xl font-light tracking-wide">
-            2020 - 2025
+            2020-2025
         </p>
     </header>
 
     <main class="max-w-7xl mx-auto px-4 pb-32">
         {% if albums|length == 0 %}
-            <div class="text-center text-neutral-500 dark:text-neutral-600 py-20">
-                <p>暂无相簿，点击右下角上传第一张照片吧！</p>
-            </div>
+            <div class="text-center text-neutral-500 py-20">暂无相簿</div>
         {% else %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {% for album in albums %}
                 <a href="/album/{{ album.name }}" class="group block relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer bg-white dark:bg-neutral-800 shadow-lg hover:shadow-2xl dark:shadow-none transition-all duration-500 hover:-translate-y-1">
-                    <img src="{{ album.cover }}" alt="{{ album.name }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100">
-                    
+                    <img src="{{ album.cover }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent dark:from-black/90 dark:via-black/20 dark:to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
-                    
                     <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                         <h2 class="text-3xl font-bold text-white mb-1 drop-shadow-md">{{ album.name }}</h2>
                         <p class="text-green-300 dark:text-green-400 text-sm font-medium uppercase tracking-widest">{{ album.count }} 张照片</p>
@@ -177,32 +128,61 @@
             </div>
         {% endif %}
 
-        <a href="/upload" class="fixed bottom-8 right-8 bg-green-600 hover:bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 hover:rotate-90 text-2xl font-bold z-50">
+        <a href="/upload" id="uploadBtn" class="hidden fixed bottom-8 right-8 bg-green-600 hover:bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 hover:rotate-90 text-2xl font-bold z-50">
             +
         </a>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://cdn.staticfile.org/Swiper/11.0.5/swiper-bundle.min.js"></script>
+    <script src="https://cdn.staticfile.org/supabase-js/2.39.3/supabase.min.js"></script>
 
     <script>
+        // Swiper 初始化
         var swiper = new Swiper(".mySwiper", {
-            centeredSlides: true,
-            slidesPerView: "auto",
-            spaceBetween: 0, 
-            loop: true,
-            loopedSlides: 8, 
-            autoplay: {
-                delay: 2000, 
-                disableOnInteraction: false,
-                pauseOnMouseEnter: true
-            },
-            speed: 800,
-            grabCursor: true,
-            slideToClickedSlide: true,
-            observer: true,
-            observeParents: true,
+            centeredSlides: true, slidesPerView: "auto", spaceBetween: 0, 
+            loop: true, loopedSlides: 8, speed: 800, grabCursor: true, slideToClickedSlide: true,
+            observer: true, observeParents: true,
+            autoplay: { delay: 2000, disableOnInteraction: false, pauseOnMouseEnter: true },
         });
-    </script>
 
+        // 🟢 Auth 逻辑
+        const supabaseUrl = "{{ supabase_url }}";
+        const supabaseKey = "{{ supabase_key }}";
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // 🟢 请修改这里为你的管理员邮箱
+        const ADMIN_EMAIL = "admin@oreo.com"; 
+
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            const userArea = document.getElementById('userArea');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (user) {
+                const isAdmin = user.email === ADMIN_EMAIL;
+                const displayName = user.email.split('@')[0];
+                
+                userArea.innerHTML = `
+                    <span class="text-neutral-500 dark:text-neutral-400 text-sm hidden md:inline">Hi, ${displayName}</span>
+                    <button onclick="logout()" class="text-xs bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 px-3 py-1.5 rounded-full transition">退出</button>
+                `;
+
+                if (isAdmin) {
+                    uploadBtn.classList.remove('hidden');
+                }
+            } else {
+                userArea.innerHTML = `
+                    <a href="/login" class="text-sm bg-black dark:bg-white text-white dark:text-black hover:opacity-80 px-4 py-1.5 rounded-full font-bold transition">登录</a>
+                `;
+            }
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.reload();
+        }
+
+        checkUser();
+    </script>
 </body>
 </html>

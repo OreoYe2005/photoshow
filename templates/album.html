@@ -4,53 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ album_name }} | OREO</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script src="https://cdn.staticfile.org/tailwindcss/3.4.1/script.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        lightBg: '#f8fafc', 
-                    }
-                }
-            }
+            theme: { extend: { colors: { lightBg: '#f8fafc' } } }
         }
     </script>
-
     <script>
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
         } else {
             document.documentElement.classList.remove('dark')
         }
-
         function toggleTheme() {
             if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.theme = 'light';
+                document.documentElement.classList.remove('dark'); localStorage.theme = 'light';
             } else {
-                document.documentElement.classList.add('dark');
-                localStorage.theme = 'dark';
+                document.documentElement.classList.add('dark'); localStorage.theme = 'dark';
             }
         }
     </script>
 </head>
 <body class="bg-lightBg text-neutral-900 dark:bg-neutral-900 dark:text-white min-h-screen transition-colors duration-300">
 
-    <button onclick="toggleTheme()" class="fixed top-6 right-6 z-50 p-3 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-lg hover:scale-110 transition-transform backdrop-blur-md border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-yellow-400">
-        <svg class="w-6 h-6 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-        <svg class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+    <button onclick="toggleTheme()" class="fixed top-20 right-6 z-50 p-2.5 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-lg hover:scale-110 transition-transform backdrop-blur-md border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-yellow-400">
+        <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
     </button>
 
     <nav class="fixed top-0 w-full bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md z-40 border-b border-neutral-200 dark:border-neutral-800 p-4 transition-colors duration-300">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <a href="/" class="text-sm font-bold hover:text-green-600 dark:hover:text-green-400 transition-colors flex items-center gap-2">
-                ← 返回首页
-            </a>
+            <a href="/" class="text-sm font-bold hover:text-green-600 dark:hover:text-green-400 transition-colors flex items-center gap-2">← 返回首页</a>
             <span class="text-lg font-bold">{{ album_name }}</span>
-            <div class="w-16"></div> </div>
+            <div id="navUserArea" class="text-xs"></div>
+        </div>
     </nav>
 
     <header class="pt-32 pb-10 px-4 text-center max-w-2xl mx-auto">
@@ -62,9 +50,7 @@
         {% if grouped_photos|length == 0 %}
             <div class="text-center text-neutral-400 dark:text-neutral-600 mt-20">这里还没有照片哦</div>
         {% else %}
-            
             {% for group in grouped_photos %}
-                
                 <div class="mt-12 mb-6 border-b border-neutral-200 dark:border-neutral-800 pb-2">
                     <h2 class="text-xl font-bold text-green-600 dark:text-green-400 flex items-center gap-2">
                         📅 {{ group.date }}
@@ -74,22 +60,99 @@
 
                 <div class="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6 mb-12">
                     {% for photo in group.photos %}
-                    <div class="break-inside-avoid bg-white dark:bg-neutral-800 rounded-xl overflow-hidden shadow-md dark:shadow-xl hover:shadow-lg transition-shadow duration-300 group">
+                    <div class="break-inside-avoid bg-white dark:bg-neutral-800 rounded-xl overflow-hidden shadow-md dark:shadow-xl hover:shadow-lg transition-shadow duration-300 relative group">
+                        
                         <img src="{{ photo.src }}" loading="lazy" class="w-full h-auto object-cover hover:opacity-95 transition-opacity">
                         
-                        {% if photo.description %}
-                        <div class="p-4">
-                            <p class="text-neutral-600 dark:text-neutral-300 text-sm leading-relaxed">{{ photo.description }}</p>
+                        <button onclick="deletePhoto('{{ photo.id }}')" class="admin-only hidden absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full shadow-lg hover:bg-red-500 z-20">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+
+                        <div class="p-3 flex justify-between items-start">
+                            <div class="flex-1">
+                                {% if photo.description %}
+                                <p class="text-neutral-600 dark:text-neutral-300 text-sm leading-relaxed">{{ photo.description }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <button onclick="toggleLike('{{ photo.id }}', this)" class="flex items-center gap-1 text-neutral-400 hover:text-red-500 transition-colors ml-2 group-like">
+                                <svg class="w-5 h-5 heart-icon transition-transform active:scale-125" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                </svg>
+                                <span class="text-xs font-mono like-count">{{ photo.likes }}</span>
+                            </button>
                         </div>
-                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
-
             {% endfor %}
-
         {% endif %}
     </main>
 
+    <script src="https://cdn.staticfile.org/supabase-js/2.39.3/supabase.min.js"></script>
+    <script>
+        const supabaseUrl = "{{ supabase_url }}";
+        const supabaseKey = "{{ supabase_key }}";
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // 🟢 请修改为你的管理员邮箱
+        const ADMIN_EMAIL = "admin@oreo.com"; 
+        let currentUser = null;
+
+        async function init() {
+            const { data: { user } } = await supabase.auth.getUser();
+            currentUser = user;
+            
+            // 顶部简单显示用户状态
+            const navUser = document.getElementById('navUserArea');
+            if(user) navUser.innerText = user.email.split('@')[0];
+
+            if (user && user.email === ADMIN_EMAIL) {
+                document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+            }
+        }
+
+        async function toggleLike(photoId, btn) {
+            if (!currentUser) {
+                alert("请先登录才能点赞哦！");
+                window.location.href = "/login";
+                return;
+            }
+
+            const icon = btn.querySelector('.heart-icon');
+            const countSpan = btn.querySelector('.like-count');
+            let currentCount = parseInt(countSpan.innerText);
+
+            // 简单前端反馈，实际应查询数据库状态
+            // 这里我们简化：先假设未点赞 -> 点赞
+            const { error } = await supabase.from('likes').insert({ user_id: currentUser.id, photo_id: photoId });
+            
+            if (error) {
+                // 如果插入失败(通常是因为已经点过赞了，违反唯一约束)，则执行删除(取消点赞)
+                // 注意：这需要你在 likes 表设置 unique(user_id, photo_id) 约束
+                // 如果没有约束，这里我们简单用 confirm 模拟取消点赞查询
+                
+                // 更严谨的写法是先 select maybeSingle，但为了代码简洁：
+                const { data: exist } = await supabase.from('likes').select('id').match({user_id: currentUser.id, photo_id: photoId}).maybeSingle();
+                if(exist) {
+                     await supabase.from('likes').delete().eq('id', exist.id);
+                     icon.classList.remove('fill-red-500', 'text-red-500');
+                     countSpan.innerText = Math.max(0, currentCount - 1);
+                }
+            } else {
+                icon.classList.add('fill-red-500', 'text-red-500');
+                countSpan.innerText = currentCount + 1;
+            }
+        }
+
+        async function deletePhoto(photoId) {
+            if (!confirm("确定要删除这张照片吗？操作无法撤销。")) return;
+            const { error } = await supabase.from('photos').delete().eq('id', photoId);
+            if (error) alert("删除失败: " + error.message);
+            else { alert("已删除"); window.location.reload(); }
+        }
+
+        init();
+    </script>
 </body>
 </html>

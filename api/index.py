@@ -16,113 +16,90 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 @app.route('/')
 def home():
     try:
-        # 1. 获取所有照片数据 (按上传时间倒序)
         response = supabase.table('photos').select("*").order('created_at', desc=True).execute()
         all_data = response.data
-
-        # 2. 🟢 随机抽取 10 张照片做“顶部轮播展示” (Hero Section)
-        # 如果照片总数少于 10 张，就全拿出来；否则随机抽 10 张
         if len(all_data) > 10:
             hero_photos = random.sample(all_data, 10)
         else:
             hero_photos = all_data
-
-        # 3. 🟢 整理相簿列表 (计算每个相簿有多少张、封面是啥)
+        
         albums_dict = {}
         for item in all_data:
             album_name = item.get('album', '默认相簿')
-            
-            # 如果这个相簿还没统计过，初始化一下
             if album_name not in albums_dict:
-                albums_dict[album_name] = {
-                    "name": album_name,
-                    "cover": item['url'], # 用最新的一张做封面
-                    "count": 0
-                }
-            
-            # 计数 +1
+                albums_dict[album_name] = { "name": album_name, "cover": item['url'], "count": 0 }
             albums_dict[album_name]['count'] += 1
         
-        # 渲染首页
-        return render_template('index.html', 
-                               albums=list(albums_dict.values()), 
-                               hero_photos=hero_photos)
-                               
+        # 传递 URL/Key 方便首页做登录状态检查
+        return render_template('index.html', albums=list(albums_dict.values()), hero_photos=hero_photos, supabase_url=SUPABASE_URL, supabase_key=SUPABASE_KEY)
     except Exception as e:
-        print(f"Error in home: {e}")
-        return f"加载首页出错: {e}"
+        return f"Error: {e}"
 
 @app.route('/album/<album_name>')
 def show_album(album_name):
     try:
-        # 1. 🟢 从数据库的 albums 表查询“相簿简介”
-        # 使用 single() 因为我们只查一个相簿
+        # 1. 获取简介
         album_info = supabase.table('albums').select("description").eq('name', album_name).execute()
-        
-        # 设置默认简介
-        album_desc = "这是一个精选相簿。"
-        
-        # 如果数据库里查到了，就覆盖默认值
-        if album_info.data and len(album_info.data) > 0:
-            db_desc = album_info.data[0].get('description')
-            if db_desc:
-                album_desc = db_desc
+        album_desc = album_info.data[0].get('description') if album_info.data else "这是一个精选相簿。"
 
-        # 2. 🟢 获取该相簿下的所有照片 (按拍摄时间 taken_at 倒序)
-        # 如果没有 taken_at，Supabase 默认处理 (我们在下面代码逻辑里兜底)
+        # 2. 获取照片 (需要 id)
         response = supabase.table('photos').select("*").eq('album', album_name).order('taken_at', desc=True).execute()
         
-        # 3. 🟢 按月份分组逻辑
+        # 3. 🟢 获取该相册所有照片的点赞数
+        # 技巧：我们直接查 likes 表，找出 photo_id 在当前照片列表里的数据
+        photo_ids = [p['id'] for p in response.data]
+        likes_data = []
+        if photo_ids:
+             # 查询 likes 表里所有相关的点赞
+            likes_res = supabase.table('likes').select('photo_id').in_('photo_id', photo_ids).execute()
+            likes_data = likes_res.data
+
+        # 统计每个 photo_id 的点赞数
+        likes_count_map = {}
+        for like in likes_data:
+            pid = like['photo_id']
+            likes_count_map[pid] = likes_count_map.get(pid, 0) + 1
+
         grouped_photos = []
-        
         for item in response.data:
-            # --- 时间处理逻辑 ---
+            # 🟢 确保每张照片都有 ID (为了前端点赞)
+            photo_id = item.get('id') 
+            
             try:
-                # 优先用拍摄时间 (taken_at)，如果没有就用上传时间 (created_at)
-                time_str = item.get('taken_at')
-                if not time_str:
-                    time_str = item['created_at']
-                
-                # 解析时间字符串 (处理 ISO 格式)
-                # replace('Z', '+00:00') 是为了处理时区后缀
+                time_str = item.get('taken_at') or item['created_at']
                 dt = datetime.fromisoformat(time_str.replace('Z', '+00:00'))
-                
-                # 格式化成 "2025年12月" 这样的标签
                 date_label = dt.strftime('%Y年%m月')
             except:
                 date_label = "未知日期"
-            # ------------------
 
             photo_data = {
+                "id": photo_id, # 传给前端
                 "src": item['url'],
                 "title": item['title'],
-                "description": item.get('description', '')
+                "description": item.get('description', ''),
+                "likes": likes_count_map.get(photo_id, 0) # 点赞数
             }
 
-            # 如果列表是空的，或者当前照片的月份和上一组不一样，就新建一组
             if not grouped_photos or grouped_photos[-1]['date'] != date_label:
-                grouped_photos.append({
-                    "date": date_label,
-                    "photos": []
-                })
-            
-            # 把照片塞进最后一组里
+                grouped_photos.append({ "date": date_label, "photos": [] })
             grouped_photos[-1]['photos'].append(photo_data)
         
-        return render_template('album.html', 
-                               album_name=album_name, 
-                               album_desc=album_desc, 
-                               grouped_photos=grouped_photos)
-
+        return render_template('album.html', album_name=album_name, album_desc=album_desc, grouped_photos=grouped_photos, supabase_url=SUPABASE_URL, supabase_key=SUPABASE_KEY)
     except Exception as e:
-        print(f"Error in show_album: {e}")
-        return f"加载相簿出错: {e}"
+        return f"Error: {e}"
 
 @app.route('/upload')
 def upload_page():
-    # 传递 URL 和 Key 给前端 JS 使用，实现直传
     return render_template('upload.html', supabase_url=SUPABASE_URL, supabase_key=SUPABASE_KEY)
 
-# Vercel 需要这个入口
+# 🟢 新增路由
+@app.route('/login')
+def login_page():
+    return render_template('login.html', supabase_url=SUPABASE_URL, supabase_key=SUPABASE_KEY)
+
+@app.route('/register')
+def register_page():
+    return render_template('register.html', supabase_url=SUPABASE_URL, supabase_key=SUPABASE_KEY)
+
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
