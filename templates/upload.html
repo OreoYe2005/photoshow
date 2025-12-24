@@ -15,7 +15,6 @@
             theme: { extend: { colors: { lightBg: '#f8fafc' } } }
         }
     </script>
-
     <script>
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
@@ -23,30 +22,21 @@
             document.documentElement.classList.remove('dark')
         }
     </script>
-    
     <style>
         body { font-family: sans-serif; }
-        /* 进度条动画 */
         .progress-bar-striped {
             background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
             background-size: 1rem 1rem;
             animation: progress-bar-stripes 1s linear infinite;
         }
-        @keyframes progress-bar-stripes {
-            0% { background-position: 1rem 0; }
-            100% { background-position: 0 0; }
-        }
+        @keyframes progress-bar-stripes { 0% { background-position: 1rem 0; } 100% { background-position: 0 0; } }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-neutral-900 flex items-center justify-center min-h-screen transition-colors duration-300 p-4">
 
-    <div id="server-config" 
-         data-url="{{ supabase_url }}" 
-         data-key="{{ supabase_key }}"
-         style="display:none;">
-    </div>
+    <div id="server-config" data-url="{{ supabase_url }}" data-key="{{ supabase_key }}" style="display:none;"></div>
 
-    <div class="bg-white dark:bg-neutral-800 p-8 rounded-2xl shadow-xl w-full max-w-lg transition-colors border border-gray-100 dark:border-neutral-700">
+    <div class="bg-white dark:bg-neutral-800 p-8 rounded-2xl shadow-xl w-full max-w-lg border border-gray-100 dark:border-neutral-700">
         
         <h1 class="text-3xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-500">
             上传新作品
@@ -55,44 +45,48 @@
         <div class="space-y-6">
             
             <div>
-                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">选择照片 (支持多选)</label>
-                <input type="file" id="fileInput" accept="image/*" multiple 
-                    class="block w-full text-sm text-slate-500
-                      file:mr-4 file:py-2.5 file:px-6
-                      file:rounded-full file:border-0
-                      file:text-sm file:font-bold
-                      file:bg-green-50 file:text-green-700
-                      hover:file:bg-green-100
-                      dark:file:bg-green-900/30 dark:file:text-green-400
-                      cursor-pointer border border-gray-300 dark:border-neutral-600 rounded-lg overflow-hidden bg-white dark:bg-neutral-900 transition-colors
-                    ">
+                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">选择照片</label>
+                
+                <div class="relative group">
+                    <input type="file" id="fileInput" accept="image/*" multiple class="hidden" onchange="updateFileLabel(this)">
+                    
+                    <label for="fileInput" class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 dark:border-neutral-600 rounded-xl cursor-pointer bg-slate-50 dark:bg-neutral-800/50 hover:bg-green-50 dark:hover:bg-neutral-700 hover:border-green-400 dark:hover:border-green-500 transition-all duration-300 group-hover:scale-[1.01]">
+                        
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6 text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                            <svg class="w-10 h-10 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                            <p class="mb-1 text-sm font-bold"><span class="underline">点击选择</span> 或拖拽照片到这里</p>
+                            <p class="text-xs opacity-70">支持 JPG, PNG (可多选)</p>
+                        </div>
+                    </label>
+                </div>
+
+                <div id="fileStatus" class="mt-2 text-sm text-center font-medium text-green-600 dark:text-green-400 hidden animate-pulse">
+                    </div>
             </div>
 
-            <div class="p-5 bg-slate-50 dark:bg-neutral-700/50 rounded-xl border border-slate-200 dark:border-neutral-600 space-y-4 transition-colors">
-                <h2 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider flex items-center gap-2">
-                    <span>📂</span> 相簿设置
+            <div class="p-5 bg-slate-50 dark:bg-neutral-700/50 rounded-xl border border-slate-200 dark:border-neutral-600 space-y-4">
+                <h2 class="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wider flex items-center gap-2">
+                    📂 相簿设置
                 </h2>
-                
                 <div>
-                    <label class="block mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">相簿名称 (必填)</label>
+                    <label class="block mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">相簿名称</label>
                     <input type="text" id="albumInput" placeholder="例如：日本旅行" 
-                        class="w-full px-4 py-2.5 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none dark:text-white shadow-sm">
+                        class="w-full px-4 py-2.5 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500/50 focus:border-green-500 outline-none dark:text-white">
                 </div>
-                
                 <div>
-                    <label class="block mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">相簿简介 (可选，用于新建或更新)</label>
+                    <label class="block mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">相簿简介</label>
                     <textarea id="albumDescInput" rows="2" placeholder="关于这个相簿..." 
-                        class="w-full px-4 py-2.5 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none dark:text-white shadow-sm resize-none"></textarea>
+                        class="w-full px-4 py-2.5 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500/50 focus:border-green-500 outline-none dark:text-white resize-none"></textarea>
                 </div>
             </div>
             
             <div>
-                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">照片描述 (通用)</label>
-                <textarea id="descInput" rows="3" placeholder="记录下此刻的心情..." 
-                    class="w-full px-4 py-2.5 bg-slate-50 dark:bg-neutral-900 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none dark:text-white shadow-sm resize-none"></textarea>
+                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">照片描述</label>
+                <textarea id="descInput" rows="2" placeholder="记录下此刻的心情..." 
+                    class="w-full px-4 py-2.5 bg-slate-50 dark:bg-neutral-900 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500/50 focus:border-green-500 outline-none dark:text-white resize-none"></textarea>
             </div>
 
-            <div id="statusArea" class="hidden bg-slate-100 dark:bg-neutral-700 p-4 rounded-xl transition-all">
+            <div id="statusArea" class="hidden bg-slate-100 dark:bg-neutral-700 p-4 rounded-xl">
                 <div class="w-full bg-gray-200 dark:bg-neutral-600 rounded-full h-3 overflow-hidden">
                     <div id="progressBar" class="bg-green-500 h-3 rounded-full transition-all duration-300 progress-bar-striped" style="width: 0%"></div>
                 </div>
@@ -100,46 +94,43 @@
             </div>
 
             <button type="button" id="submitBtn" onclick="handleUpload()" 
-                class="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+                class="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
                 开始上传 🚀
             </button>
         </div>
         
         <div class="mt-6 text-center">
-             <a href="/" class="text-sm font-medium text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors inline-flex items-center gap-1">
-                <span>←</span> 返回首页
-             </a>
+             <a href="/" class="text-sm font-medium text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors">← 返回首页</a>
         </div>
     </div>
 
     <script>
-        // 读取配置
         const configDiv = document.getElementById('server-config');
         const supabaseUrl = configDiv.getAttribute('data-url');
         const supabaseKey = configDiv.getAttribute('data-key');
-        
-        // 管理员邮箱 (请确保与 index.html 一致)
         const ADMIN_EMAIL = "admin@oreo.com"; 
 
-        let supabase;
+        // 🟢 简单的文件选择反馈逻辑
+        function updateFileLabel(input) {
+            const statusDiv = document.getElementById('fileStatus');
+            if (input.files && input.files.length > 0) {
+                statusDiv.classList.remove('hidden');
+                statusDiv.innerText = `✅ 已选择 ${input.files.length} 张照片`;
+            } else {
+                statusDiv.classList.add('hidden');
+            }
+        }
 
-        // 权限检查与初始化
         async function init() {
             if (!window.supabase) { setTimeout(init, 500); return; }
-            if (!supabaseUrl || supabaseUrl.length < 5) { alert("❌ 后端配置错误"); return; }
-            
-            supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-            
+            const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
             const { data: { user } } = await supabase.auth.getUser();
-            // 简单检查：如果不是指定的管理员邮箱，就踢回首页
             if (!user || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-                alert("⛔ 您没有上传权限，请使用管理员账号登录。");
-                window.location.href = "/";
+                alert("⛔ 无权限"); window.location.href = "/";
             }
         }
         init();
 
-        // EXIF 日期提取工具
         function getTakenDate(file) {
             return new Promise((resolve) => {
                 EXIF.getData(file, function() {
@@ -149,7 +140,6 @@
             });
         }
         
-        // 上传主函数
         async function handleUpload() {
             const files = document.getElementById('fileInput').files;
             const albumName = document.getElementById('albumInput').value;
@@ -163,63 +153,45 @@
             if (files.length === 0) return alert("请先选择照片");
             if (!albumName) return alert("请填写相簿名称");
 
-            // 锁定界面
+            const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
             submitBtn.disabled = true;
-            submitBtn.innerText = "正在处理...";
             statusArea.classList.remove('hidden');
             progressBar.style.width = "5%";
 
             try {
-                // 1. 更新相簿信息
                 if (albumDesc) {
-                    statusText.innerText = `正在更新相簿信息...`;
+                    statusText.innerText = "正在创建相簿...";
                     await supabase.from('albums').upsert({ name: albumName, description: albumDesc }, { onConflict: 'name' });
                 }
 
-                // 2. 循环上传照片
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     statusText.innerText = `正在上传 (${i + 1}/${files.length}): ${file.name}`;
-                    progressBar.style.width = `${((i + 0.5) / files.length) * 100}%`; // 假进度
+                    progressBar.style.width = `${((i + 0.5) / files.length) * 100}%`;
 
-                    // 获取日期
                     const takenAt = await getTakenDate(file);
+                    const safeName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${file.name.split('.').pop()}`;
                     
-                    // 上传文件到 Storage
-                    const fileExt = file.name.split('.').pop();
-                    const safeName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-                    const { error: uploadError } = await supabase.storage.from('photos').upload(safeName, file);
-                    if (uploadError) throw uploadError;
+                    const { error: upErr } = await supabase.storage.from('photos').upload(safeName, file);
+                    if (upErr) throw upErr;
 
-                    // 获取公开链接
                     const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(safeName);
                     
-                    // 写入数据库
-                    const { error: dbError } = await supabase.from('photos').insert({
+                    await supabase.from('photos').insert({
                         title: file.name.replace(/\.[^/.]+$/, ""),
-                        url: publicUrl,
-                        album: albumName,
-                        description: photoDesc,
-                        taken_at: takenAt
+                        url: publicUrl, album: albumName, description: photoDesc, taken_at: takenAt
                     });
-                    if (dbError) throw dbError;
-
-                    // 更新进度条
                     progressBar.style.width = `${((i + 1) / files.length) * 100}%`;
                 }
 
-                // 3. 完成
-                statusText.innerText = `🎉 全部完成！即将返回首页...`;
-                progressBar.classList.remove('progress-bar-striped'); // 停止动画表示完成
-                setTimeout(() => { window.location.href = '/'; }, 1500);
+                statusText.innerText = "🎉 上传完成！";
+                progressBar.classList.remove('progress-bar-striped');
+                setTimeout(() => { window.location.href = '/'; }, 1000);
 
             } catch (err) {
-                console.error(err);
-                alert(`❌ 上传出错: ${err.message}`);
+                alert("出错: " + err.message);
                 submitBtn.disabled = false;
-                submitBtn.innerText = "开始上传 🚀";
-                statusText.innerText = "发生错误";
-                progressBar.style.width = "0%";
                 statusArea.classList.add('hidden');
             }
         }
