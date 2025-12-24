@@ -3,26 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>慕心水搞</title>
+    <title>OREO 的摄影集</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://fastly.jsdelivr.net/npm/tailwindcss-cdn@3.4.1/tailwindcss.js"></script>
     
     <link rel="stylesheet" href="https://cdn.staticfile.org/Swiper/11.0.5/swiper-bundle.min.css" />
     
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        lightBg: '#f8fafc', 
-                    },
-                    aspectRatio: {
-                        '4/3': '4 / 3',
+        // 尝试配置 Tailwind，如果脚本加载失败，这段代码不会报错，只是不生效
+        try {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: { lightBg: '#f8fafc' },
+                        aspectRatio: { '4/3': '4 / 3' }
                     }
                 }
             }
-        }
+        } catch(e) { console.log('Tailwind not loaded yet'); }
     </script>
 
     <script>
@@ -31,99 +30,84 @@
         } else {
             document.documentElement.classList.remove('dark')
         }
-
         function toggleTheme() {
             if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.theme = 'light';
+                document.documentElement.classList.remove('dark'); localStorage.theme = 'light';
             } else {
-                document.documentElement.classList.add('dark');
-                localStorage.theme = 'dark';
+                document.documentElement.classList.add('dark'); localStorage.theme = 'dark';
             }
         }
     </script>
     
     <style>
-        /* 🛡️ 保底样式：防止 CSS 加载失败时图片撑爆屏幕 */
-        img { max-width: 100%; height: auto; }
-
-        /* Swiper 容器 */
-        .swiper { 
-            width: 100%; 
-            padding-top: 40px; 
-            padding-bottom: 40px; 
-        }
-
-        /* Slide 样式 */
+        /* 全局重置：防止图片撑爆屏幕 */
+        img { max-width: 100%; height: auto; display: block; }
+        body { margin: 0; font-family: sans-serif; background-color: #f8fafc; color: #171717; }
+        .dark body { background-color: #171717; color: #ffffff; }
+        
+        /* 强制 Swiper 布局 */
+        .swiper { width: 100%; padding: 40px 0; overflow: hidden; }
+        .swiper-wrapper { display: flex; }
         .swiper-slide {
-            width: 80vw; /* 手机端宽度 */
+            width: 80vw; /* 手机端强制宽度 */
             height: 240px;
-            flex-shrink: 0; 
-            background: transparent;
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
+            flex-shrink: 0;
+            margin-right: 20px; /* 强制间距 */
+            position: relative;
+            display: flex; justify-content: center; align-items: center;
         }
-        
-        @media (min-width: 768px) { 
-            .swiper-slide { 
-                width: 480px; /* 电脑端宽度 */
-                height: 320px; 
-            } 
+        @media (min-width: 768px) {
+            .swiper-slide { width: 480px; height: 320px; }
         }
-        
-        /* 内部盒子 */
         .slide-inner {
-            width: 100%; 
-            height: 100%; 
-            border-radius: 12px; 
-            overflow: hidden;
-            background-position: center; 
-            background-size: cover;
-            transform: scale(0.92); 
-            opacity: 0.8; 
-            filter: grayscale(30%);
-            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%; height: 100%; border-radius: 12px; overflow: hidden;
             position: relative;
         }
         
-        .dark .slide-inner { 
-            opacity: 0.5; 
-            filter: blur(1px) grayscale(50%); 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+        /* 强制相册网格布局 (模拟 Tailwind grid) */
+        .grid-fallback {
+            display: grid;
+            grid-template-columns: 1fr; /* 手机端单列 */
+            gap: 2rem;
+        }
+        @media (min-width: 768px) {
+            .grid-fallback { grid-template-columns: repeat(2, 1fr); } /* 平板双列 */
+        }
+        @media (min-width: 1024px) {
+            .grid-fallback { grid-template-columns: repeat(3, 1fr); } /* 电脑三列 */
         }
         
-        /* 激活状态 */
-        .swiper-slide-active .slide-inner {
-            transform: scale(1); 
-            opacity: 1; 
-            filter: none;
-            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.25); 
-            border: 1px solid rgba(255,255,255,0.2);
+        /* 卡片强制比例 */
+        .aspect-card {
+            aspect-ratio: 4/3;
+            position: relative;
+            overflow: hidden;
+            border-radius: 1rem;
+            background-color: #e5e5e5;
         }
-        
-        .dark .swiper-slide-active .slide-inner {
-            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.7); 
+        .aspect-card img {
+            width: 100%; height: 100%; object-fit: cover;
         }
 
-        .slide-inner img { 
-            display: block; 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            object-position: center;
+        /* 导航栏定位 */
+        nav {
+            position: absolute; top: 0; left: 0; width: 100%;
+            padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;
+            z-index: 40;
         }
+        
+        /* 隐藏元素的辅助类 */
+        .hidden { display: none; }
     </style>
 </head>
 <body class="bg-lightBg text-neutral-900 dark:bg-neutral-900 dark:text-white min-h-screen font-sans transition-colors duration-300">
 
-    <nav class="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center z-40">
+    <nav>
         <div class="text-xl font-bold tracking-tight">OREO</div>
         <div id="userArea" class="flex items-center gap-3"></div>
     </nav>
 
-    <button onclick="toggleTheme()" class="fixed top-20 right-6 z-50 p-2.5 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-lg hover:scale-110 transition-transform backdrop-blur-md border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-yellow-400">
+    <button onclick="toggleTheme()" class="fixed top-20 right-6 z-50 p-2.5 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-lg border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-yellow-400 cursor-pointer">
         <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
         <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
     </button>
@@ -134,10 +118,10 @@
             <div class="swiper-wrapper">
                 {% for photo in hero_photos %}
                 <div class="swiper-slide cursor-pointer group">
-                    <div class="slide-inner">
+                    <div class="slide-inner bg-neutral-200 dark:bg-neutral-800">
                         <img src="{{ photo.url }}" loading="lazy" alt="{{ photo.title }}">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div class="absolute bottom-4 left-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md transform translate-y-2 group-hover:translate-y-0">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" style="position:absolute; top:0; left:0; width:100%; height:100%;"></div>
+                        <div class="absolute bottom-4 left-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md" style="position:absolute; bottom:16px; left:16px;">
                             <p class="text-sm font-bold">{{ photo.title }}</p>
                         </div>
                     </div>
@@ -149,11 +133,11 @@
     {% endif %}
 
     <header class="py-8 md:py-16 px-4 text-center">
-        <h1 class="text-4xl md:text-6xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-500">
-            慕心水搞
+        <h1 class="text-4xl md:text-6xl font-bold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-500" style="background-clip: text; -webkit-background-clip: text;">
+            OREO 的摄影集
         </h1>
         <p class="text-neutral-500 dark:text-neutral-400 text-base md:text-lg font-light tracking-wide">
-            2020-2025
+            记录光影，定格瞬间。
         </p>
     </header>
 
@@ -161,24 +145,24 @@
         {% if albums|length == 0 %}
             <div class="text-center text-neutral-500 py-20">暂无相簿</div>
         {% else %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 grid-fallback">
                 {% for album in albums %}
-                <a href="/album/{{ album.name }}" class="group block relative overflow-hidden rounded-2xl aspect-[4/3] cursor-pointer bg-white dark:bg-neutral-800 shadow-md hover:shadow-2xl dark:shadow-none transition-all duration-500 hover:-translate-y-1">
+                <a href="/album/{{ album.name }}" class="group block relative rounded-2xl cursor-pointer bg-white dark:bg-neutral-800 shadow-md hover:shadow-2xl dark:shadow-none transition-all duration-500 hover:-translate-y-1 aspect-card">
                     
                     <img src="{{ album.cover }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100">
                     
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" style="position:absolute; inset:0;"></div>
                     
-                    <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                        <h2 class="text-2xl md:text-3xl font-bold text-white mb-1 drop-shadow-md">{{ album.name }}</h2>
-                        <p class="text-green-300 dark:text-green-400 text-xs font-medium uppercase tracking-widest">{{ album.count }} 张照片</p>
+                    <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300" style="position:absolute; bottom:0; left:0; padding: 24px;">
+                        <h2 class="text-2xl md:text-3xl font-bold text-white mb-1 drop-shadow-md" style="margin:0; color:white;">{{ album.name }}</h2>
+                        <p class="text-green-300 dark:text-green-400 text-xs font-medium uppercase tracking-widest" style="color: #86efac;">{{ album.count }} 张照片</p>
                     </div>
                 </a>
                 {% endfor %}
             </div>
         {% endif %}
 
-        <a href="/upload" id="uploadBtn" class="hidden fixed bottom-8 right-8 bg-green-600 hover:bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 hover:rotate-90 text-2xl font-bold z-50">
+        <a href="/upload" id="uploadBtn" class="hidden fixed bottom-8 right-8 bg-green-600 hover:bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 hover:rotate-90 text-2xl font-bold z-50" style="position:fixed; bottom:32px; right:32px; display:flex; justify-content:center; align-items:center; border-radius:50%;">
             +
         </a>
     </main>
@@ -187,7 +171,6 @@
     <script src="https://cdn.staticfile.org/supabase-js/2.39.3/supabase.min.js"></script>
 
     <script>
-        // Swiper 初始化
         var swiper = new Swiper(".mySwiper", {
             centeredSlides: true,
             slidesPerView: "auto",
@@ -224,15 +207,16 @@
                 
                 userArea.innerHTML = `
                     <span class="text-neutral-500 dark:text-neutral-400 text-sm hidden md:inline">Hi, ${displayName}</span>
-                    <button onclick="logout()" class="text-xs bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 px-3 py-1.5 rounded-full transition">退出</button>
+                    <button onclick="logout()" class="text-xs bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 px-3 py-1.5 rounded-full transition" style="margin-left: 10px; padding: 4px 12px; border-radius: 99px; cursor: pointer;">退出</button>
                 `;
 
                 if (isAdmin && uploadBtn) {
                     uploadBtn.classList.remove('hidden');
+                    uploadBtn.style.display = "flex"; // 强制显示
                 }
             } else {
                 userArea.innerHTML = `
-                    <a href="/login" class="text-sm bg-black dark:bg-white text-white dark:text-black hover:opacity-80 px-4 py-1.5 rounded-full font-bold transition">登录</a>
+                    <a href="/login" class="text-sm bg-black dark:bg-white text-white dark:text-black hover:opacity-80 px-4 py-1.5 rounded-full font-bold transition" style="background: black; color: white; padding: 6px 16px; border-radius: 99px; text-decoration: none;">登录</a>
                 `;
             }
         }
