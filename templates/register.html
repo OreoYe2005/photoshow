@@ -4,33 +4,107 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>注册 | OREO</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { lightBg: '#f8fafc' } } } }
-    </script>
+
+    <style>
+        body { background-color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: white; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        input { width: 100%; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 0.5rem; display: block; }
+        button { width: 100%; padding: 0.75rem; background: #2563eb; color: white; border: none; border-radius: 0.5rem; font-weight: bold; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+        button:disabled { background: #93c5fd; cursor: not-allowed; }
+    </style>
 </head>
-<body class="bg-lightBg dark:bg-neutral-900 text-neutral-900 dark:text-white flex items-center justify-center min-h-screen">
-    <div class="bg-white dark:bg-neutral-800 p-8 rounded-xl shadow-xl w-full max-w-sm border border-neutral-100 dark:border-neutral-700">
+<body>
+    <div class="card">
         <h1 class="text-2xl font-bold mb-6 text-center">注册账号</h1>
-        <form id="registerForm" class="space-y-4">
-            <input type="email" id="email" placeholder="邮箱" required class="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded">
-            <input type="password" id="password" placeholder="密码" required class="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded">
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded">注册</button>
+        
+        <form id="registerForm">
+            <label class="block mb-1 text-sm text-gray-600">邮箱</label>
+            <input type="email" id="email" placeholder="example@qq.com" required>
+            
+            <label class="block mb-1 text-sm text-gray-600">密码</label>
+            <input type="password" id="password" placeholder="至少6位密码" required>
+            
+            <button type="submit" id="submitBtn">注册</button>
         </form>
+
         <div class="mt-4 text-center text-sm">
-            <a href="/login" class="text-green-500 hover:underline">已有账号？去登录</a>
+            <a href="/login" class="text-blue-600 hover:underline">已有账号？去登录</a>
+            <br><br>
+            <a href="/" class="text-gray-500">← 返回首页</a>
         </div>
     </div>
+
     <script>
-        const supabase = window.supabase.createClient("{{ supabase_url }}", "{{ supabase_key }}");
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        // 🛑 调试步骤 1: 检查库是否加载
+        console.log("页面加载中...");
+        if (!window.supabase) {
+            alert("❌ 致命错误：Supabase JS 库未加载！\n请检查你的 VPN 是否正常，或者网络是否屏蔽了 cdn.jsdelivr.net");
+        }
+
+        const supabaseUrl = "{{ supabase_url }}";
+        const supabaseKey = "{{ supabase_key }}";
+        
+        // 检查后端是否正确传递了参数
+        if (!supabaseUrl || supabaseUrl.includes("{{")) {
+            console.error("Supabase 配置为空！");
+            alert("❌ 后端错误：Supabase URL/Key 没有正确传递过来。\n请确保你是通过 python api/index.py 运行的，而不是直接打开 html 文件。");
+        }
+
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        const form = document.getElementById('registerForm');
+        const btn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            // 🛑 调试步骤 2: 监听器触发
             e.preventDefault();
+            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if (error) alert("注册失败: " + error.message);
-            else alert("注册成功！请登录。"); window.location.href = '/login';
+
+            // 简单的防呆检查
+            if (!email || !password) return alert("请填写完整");
+            if (password.length < 6) return alert("密码至少需要6位");
+
+            // 🔒 锁定按钮，防止重复点击
+            btn.disabled = true;
+            btn.innerText = "正在连接服务器...";
+
+            try {
+                // 🛑 调试步骤 3: 发起请求
+                console.log("正在向 Supabase 发起注册请求...", email);
+                
+                const { data, error } = await supabase.auth.signUp({ 
+                    email: email, 
+                    password: password 
+                });
+
+                // 🛑 调试步骤 4: 处理结果
+                if (error) {
+                    console.error("注册失败:", error);
+                    alert("❌ 注册失败: " + error.message);
+                    btn.disabled = false;
+                    btn.innerText = "注册";
+                } else {
+                    console.log("注册成功:", data);
+                    // 检查是否需要验证邮箱
+                    if (data.user && !data.session) {
+                        alert("⚠️ 注册成功，但Supabase依然要求验证邮箱！\n请去你的邮箱点击链接，或者去 Supabase 后台关闭 'Confirm Email' 选项。");
+                    } else {
+                        alert("🎉 注册成功！即将跳转到登录页...");
+                        window.location.href = '/login';
+                    }
+                }
+            } catch (err) {
+                console.error("代码崩溃:", err);
+                alert("❌ 代码运行出错:\n" + err.message);
+                btn.disabled = false;
+                btn.innerText = "注册";
+            }
         });
     </script>
 </body>
