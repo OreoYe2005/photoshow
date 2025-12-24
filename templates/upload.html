@@ -67,7 +67,7 @@
         const supabaseUrl = "{{ supabase_url }}";
         const supabaseKey = "{{ supabase_key }}";
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-        const ADMIN_EMAIL = "ylltz2005@163.com"; 
+        DMIN_EMAIL = "ylltz2005@163.com"; 
 
         async function checkAuth() {
             const { data: { user } } = await supabase.auth.getUser();
