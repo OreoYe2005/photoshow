@@ -18,17 +18,20 @@
     <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
         <h1 class="text-2xl font-bold mb-6 text-center">注册账号</h1>
         
-        <form id="registerForm" class="space-y-4">
+        <div class="space-y-4">
             <div>
                 <label class="block mb-1 text-sm text-gray-600">邮箱</label>
-                <input type="email" id="email" placeholder="example@qq.com" required class="w-full px-4 py-2 border rounded border-gray-300">
+                <input type="email" id="email" placeholder="example@qq.com" class="w-full px-4 py-2 border rounded border-gray-300">
             </div>
             <div>
                 <label class="block mb-1 text-sm text-gray-600">密码</label>
-                <input type="password" id="password" placeholder="至少6位" required class="w-full px-4 py-2 border rounded border-gray-300">
+                <input type="password" id="password" placeholder="至少6位" class="w-full px-4 py-2 border rounded border-gray-300">
             </div>
-            <button type="submit" id="btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded transition">注册</button>
-        </form>
+            
+            <button type="button" id="btn" onclick="handleRegister()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded transition">
+                注册
+            </button>
+        </div>
 
         <div class="mt-4 text-center text-sm">
             <a href="/login" class="text-green-500 hover:underline">已有账号？去登录</a>
@@ -38,59 +41,74 @@
     </div>
 
     <script>
-        // 1. 从 HTML 标签里读取配置 (纯 JS，不含 Flask 语法)
-        const configDiv = document.getElementById('server-config');
-        const supabaseUrl = configDiv.getAttribute('data-url');
-        const supabaseKey = configDiv.getAttribute('data-key');
-
-        // 2. 简单的防呆检查
-        if (!supabaseUrl || supabaseUrl.length < 5) {
-            alert("❌ 严重错误：后端未能传递 Supabase 配置！\n请检查 api/index.py 中的 SUPABASE_URL 是否填写正确。");
-        }
-
-        // 3. 初始化客户端
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-        
-        // 4. 注册逻辑
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // 定义注册函数
+        async function handleRegister() {
+            console.log("🚀 注册按钮被点击");
             const btn = document.getElementById('btn');
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            
+            // 1. 读取配置
+            const configDiv = document.getElementById('server-config');
+            const supabaseUrl = configDiv.getAttribute('data-url');
+            const supabaseKey = configDiv.getAttribute('data-key');
 
-            if (password.length < 6) {
-                alert("密码长度不能少于6位");
+            // 2. 检查环境
+            if (!window.supabase) {
+                alert("❌ 错误：Supabase JS 库未加载！请检查网络。");
+                return;
+            }
+            if (!supabaseUrl || supabaseUrl.length < 5) {
+                alert("❌ 错误：后端参数未传递！请检查 api/index.py 的 SUPABASE_URL。");
                 return;
             }
 
-            btn.disabled = true; 
+            // 3. 获取输入
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                alert("请填写邮箱和密码");
+                return;
+            }
+            if (password.length < 6) {
+                alert("密码至少需要6位");
+                return;
+            }
+
+            // 4. 锁定按钮
+            btn.disabled = true;
             btn.innerText = "正在连接服务器...";
-            
+
             try {
+                // 初始化 Supabase
+                const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                
+                // 发起请求
                 const { data, error } = await supabase.auth.signUp({ 
                     email: email, 
                     password: password 
                 });
-                
+
                 if (error) {
-                    alert("注册失败: " + error.message);
-                    btn.disabled = false; 
+                    alert("❌ 注册失败: " + error.message);
+                    btn.disabled = false;
                     btn.innerText = "注册";
                 } else {
-                    // 检查是否需要验证
+                    console.log("注册成功", data);
                     if (data.user && !data.session) {
-                        alert("⚠️ 注册成功！\n请去邮箱点击验证链接，或者在 Supabase 后台关闭 'Confirm Email'。");
+                        alert("⚠️ 注册成功！\n系统已发送验证邮件，请去邮箱验证，或者去后台关闭 Confirm Email。");
+                        window.location.href = '/login';
                     } else {
                         alert("🎉 注册成功！即将跳转登录...");
                         window.location.href = '/login';
                     }
                 }
             } catch (err) {
-                alert("发生未知错误: " + err.message);
-                btn.disabled = false; 
+                console.error(err);
+                alert("❌ 发生代码错误: " + err.message);
+                btn.disabled = false;
                 btn.innerText = "注册";
             }
-        });
+        }
     </script>
 </body>
 </html>
