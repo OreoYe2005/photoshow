@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>慕心水誥</title>
+    <title>慕心水搞</title>
     
-    <script src="https://cdn.staticfile.org/tailwindcss/3.4.1/script.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <link rel="stylesheet" href="https://cdn.staticfile.org/Swiper/11.0.5/swiper-bundle.min.css" />
     
@@ -17,7 +17,6 @@
                     colors: {
                         lightBg: '#f8fafc', 
                     },
-                    // 自定义长宽比，防止 aspect-[4/3] 失效
                     aspectRatio: {
                         '4/3': '4 / 3',
                     }
@@ -45,6 +44,9 @@
     </script>
     
     <style>
+        /* 🛡️ 保底样式：防止 CSS 加载失败时图片撑爆屏幕 */
+        img { max-width: 100%; height: auto; }
+
         /* Swiper 容器 */
         .swiper { 
             width: 100%; 
@@ -52,13 +54,9 @@
             padding-bottom: 40px; 
         }
 
-        /* 🔴 核心修复：Swiper Slide 样式 
-           1. 手机端：宽度设为 80vw (屏幕宽度的80%)，高度固定 240px，防止撑爆或太扁。
-           2. 电脑端：宽度固定 480px，高度 320px。
-           3. flex-shrink: 0 防止被挤压。
-        */
+        /* Slide 样式 */
         .swiper-slide {
-            width: 80vw; 
+            width: 80vw; /* 手机端宽度 */
             height: 240px;
             flex-shrink: 0; 
             background: transparent;
@@ -69,8 +67,8 @@
         
         @media (min-width: 768px) { 
             .swiper-slide { 
-                width: 500px; 
-                height: 340px; 
+                width: 480px; /* 电脑端宽度 */
+                height: 320px; 
             } 
         }
         
@@ -78,17 +76,16 @@
         .slide-inner {
             width: 100%; 
             height: 100%; 
-            border-radius: 16px; 
+            border-radius: 12px; 
             overflow: hidden;
             background-position: center; 
             background-size: cover;
-            /* 默认状态：缩小一点 */
             transform: scale(0.92); 
             opacity: 0.8; 
             filter: grayscale(30%);
             transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            position: relative; /* 确保子元素绝对定位正常 */
+            position: relative;
         }
         
         .dark .slide-inner { 
@@ -97,22 +94,19 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
         }
         
-        /* 激活状态 (C位) */
+        /* 激活状态 */
         .swiper-slide-active .slide-inner {
             transform: scale(1); 
             opacity: 1; 
             filter: none;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); 
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.25); 
             border: 1px solid rgba(255,255,255,0.2);
         }
         
         .dark .swiper-slide-active .slide-inner {
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); 
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.7); 
         }
 
-        /* 🔴 核心修复：强制图片保持比例 
-           object-fit: cover 是关键，它保证图片填满容器且不拉伸
-        */
         .slide-inner img { 
             display: block; 
             width: 100%; 
@@ -124,10 +118,9 @@
 </head>
 <body class="bg-lightBg text-neutral-900 dark:bg-neutral-900 dark:text-white min-h-screen font-sans transition-colors duration-300">
 
-    <nav class="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center z-40 pointer-events-none">
-        <div class="text-xl font-bold tracking-tight pointer-events-auto">OREO</div>
-        <div id="userArea" class="flex items-center gap-3 pointer-events-auto">
-            </div>
+    <nav class="absolute top-0 left-0 w-full p-4 md:p-6 flex justify-between items-center z-40">
+        <div class="text-xl font-bold tracking-tight">OREO</div>
+        <div id="userArea" class="flex items-center gap-3"></div>
     </nav>
 
     <button onclick="toggleTheme()" class="fixed top-20 right-6 z-50 p-2.5 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-lg hover:scale-110 transition-transform backdrop-blur-md border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-yellow-400">
@@ -143,9 +136,7 @@
                 <div class="swiper-slide cursor-pointer group">
                     <div class="slide-inner">
                         <img src="{{ photo.url }}" loading="lazy" alt="{{ photo.title }}">
-                        
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        
                         <div class="absolute bottom-4 left-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md transform translate-y-2 group-hover:translate-y-0">
                             <p class="text-sm font-bold">{{ photo.title }}</p>
                         </div>
@@ -159,7 +150,7 @@
 
     <header class="py-8 md:py-16 px-4 text-center">
         <h1 class="text-4xl md:text-6xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-500">
-            慕心水誥
+            慕心水搞
         </h1>
         <p class="text-neutral-500 dark:text-neutral-400 text-base md:text-lg font-light tracking-wide">
             2020-2025
@@ -199,10 +190,10 @@
         // Swiper 初始化
         var swiper = new Swiper(".mySwiper", {
             centeredSlides: true,
-            slidesPerView: "auto", // 自动根据 CSS 宽度计算
-            spaceBetween: 20, // 增加一点间距，防止贴太紧
+            slidesPerView: "auto",
+            spaceBetween: 20, 
             loop: true,
-            loopedSlides: 8, // 关键：缓冲数量
+            loopedSlides: 8, 
             speed: 600,
             grabCursor: true,
             slideToClickedSlide: true,
