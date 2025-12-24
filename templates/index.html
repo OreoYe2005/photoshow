@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OREO 的摄影集</title>
+    <title>慕心水誥</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -17,7 +17,6 @@
     </script>
 
     <script>
-        // 主题初始化
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
         } else {
@@ -80,15 +79,16 @@
         .dark .album-card { background: #262626; }
         .album-card img { width: 100%; height: 100%; object-fit: cover; }
         
+        /* 上传按钮样式 */
         #uploadBtn {
             position: fixed; bottom: 32px; right: 32px; width: 56px; height: 56px;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             font-size: 24px; font-weight: bold; z-index: 50;
             background-color: #16a34a; color: white; text-decoration: none;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            /* 默认隐藏 */
             display: none !important; 
         }
-        #uploadBtn.show-upload { display: flex !important; }
     </style>
 </head>
 <body class="bg-lightBg text-neutral-900 dark:bg-neutral-900 dark:text-white min-h-screen font-sans transition-colors duration-300">
@@ -127,9 +127,9 @@
 
     <header class="py-10 px-4 text-center">
         <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-500" style="background-clip:text; -webkit-background-clip:text;">
-            OREO 的摄影集
+            慕心水誥
         </h1>
-        <p class="text-neutral-500 dark:text-neutral-400 text-lg">记录光影，定格瞬间。</p>
+        <p class="text-neutral-500 dark:text-neutral-400 text-lg">2020-2025</p>
     </header>
 
     <main class="max-w-7xl mx-auto px-4">
@@ -156,62 +156,57 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // Swiper 配置
         var swiper = new Swiper(".mySwiper", {
-            centeredSlides: true,
-            slidesPerView: "auto",
-            spaceBetween: 0, 
-            loop: true,
-            loopedSlides: 8, 
-            speed: 800, 
-            grabCursor: true,
-            slideToClickedSlide: true,
-            observer: true,
-            observeParents: true,
+            centeredSlides: true, slidesPerView: "auto", spaceBetween: 0, 
+            loop: true, loopedSlides: 8, speed: 800, grabCursor: true, slideToClickedSlide: true,
+            observer: true, observeParents: true,
             autoplay: { delay: 2000, disableOnInteraction: false, pauseOnMouseEnter: true },
         });
 
         const supabaseUrl = "{{ supabase_url }}";
         const supabaseKey = "{{ supabase_key }}";
+        
+        // 🟢 这里请填入你的管理员邮箱 (小写)
         const ADMIN_EMAIL = "admin@oreo.com"; 
 
         async function checkUser() {
-            // 给浏览器一点点时间加载库
-            if (!window.supabase) {
-                console.warn("Supabase 库暂未就绪，等待 500ms 重试...");
-                setTimeout(checkUser, 500); 
-                return;
-            }
+            // 等待库加载
+            if (!window.supabase) { setTimeout(checkUser, 500); return; }
 
             try {
                 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
                 const { data: { user }, error } = await supabase.auth.getUser();
                 
-                if (error) {
-                    console.log("未登录或网络连接 Supabase 失败:", error.message);
-                    return;
-                }
-                
                 const userArea = document.getElementById('userArea');
                 const uploadBtn = document.getElementById('uploadBtn');
 
                 if (user) {
-                    console.log("登录成功:", user.email);
+                    // 显示用户信息
                     userArea.innerHTML = `
                         <span class="text-sm text-neutral-500 dark:text-neutral-400 mr-2">Hi, ${user.email.split('@')[0]}</span>
                         <button onclick="logout()" class="text-xs bg-neutral-200 dark:bg-neutral-800 px-3 py-1 rounded-full cursor-pointer hover:bg-neutral-300">退出</button>
                     `;
                     
-                    if (user.email === ADMIN_EMAIL) {
-                        uploadBtn.classList.add('show-upload'); 
+                    // 🟢 核心逻辑修改：
+                    if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+                        // 1. 如果是管理员：显示按钮 + 弹窗欢迎
+                        uploadBtn.style.display = 'flex';
+                        uploadBtn.style.setProperty('display', 'flex', 'important');
+                        
+                        // 延迟一点弹窗，体验更好
+                        setTimeout(() => {
+                            alert("🎉 欢迎回来，管理员！\n您拥有上传和删除照片的权限。");
+                        }, 500);
+                    } else {
+                        // 2. 如果是游客/普通用户：什么都不做，安静浏览
+                        // 移除所有调试用的 alert
                     }
                 }
             } catch (err) {
-                console.error("Auth Exception:", err);
+                console.error("Auth Error:", err);
             }
         }
 
