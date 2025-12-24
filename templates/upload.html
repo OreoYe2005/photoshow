@@ -3,79 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>上传作品</title>
+    <title>上传作品 | OREO</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.staticfile.org/supabase-js/2.39.3/supabase.min.js"></script>
-    <script src="https://cdn.staticfile.org/exif-js/2.3.0/exif.min.js"></script>
-    <script>try{tailwind.config={darkMode:'class',theme:{extend:{colors:{lightBg:'#f8fafc'}}}}}catch(e){}</script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+
     <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { colors: { lightBg: '#f8fafc' } } }
+        }
+    </script>
+
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
     </script>
     
     <style>
-        body { margin: 0; font-family: sans-serif; background: #f8fafc; color: #171717; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .dark body { background: #171717; color: white; }
-        
-        .upload-card {
-            background: white; width: 100%; max-width: 480px; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        body { font-family: sans-serif; }
+        /* 进度条动画 */
+        .progress-bar-striped {
+            background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent);
+            background-size: 1rem 1rem;
+            animation: progress-bar-stripes 1s linear infinite;
         }
-        .dark .upload-card { background: #262626; }
-        
-        input, textarea, select {
-            width: 100%; padding: 0.5rem 1rem; margin-top: 0.25rem; border-radius: 0.5rem; border: 1px solid #d4d4d4; background: white; box-sizing: border-box;
+        @keyframes progress-bar-stripes {
+            0% { background-position: 1rem 0; }
+            100% { background-position: 0 0; }
         }
-        .dark input, .dark textarea { background: #404040; border-color: #525252; color: white; }
-        
-        button { width: 100%; padding: 0.75rem; background: #16a34a; color: white; border: none; border-radius: 0.5rem; font-weight: bold; cursor: pointer; margin-top: 1rem; }
-        button:hover { background: #15803d; }
     </style>
 </head>
-<body class="bg-lightBg dark:bg-neutral-900">
-    <div class="upload-card bg-white dark:bg-neutral-800">
-        <h1 class="text-2xl font-bold mb-6 text-center text-green-600">上传新作品</h1>
-        <form id="uploadForm" class="space-y-4">
+<body class="bg-slate-50 dark:bg-neutral-900 flex items-center justify-center min-h-screen transition-colors duration-300 p-4">
+
+    <div id="server-config" 
+         data-url="{{ supabase_url }}" 
+         data-key="{{ supabase_key }}"
+         style="display:none;">
+    </div>
+
+    <div class="bg-white dark:bg-neutral-800 p-8 rounded-2xl shadow-xl w-full max-w-lg transition-colors border border-gray-100 dark:border-neutral-700">
+        
+        <h1 class="text-3xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-500">
+            上传新作品
+        </h1>
+        
+        <div class="space-y-6">
+            
             <div>
-                <label class="block mb-2 text-sm text-neutral-500">选择照片</label>
-                <input type="file" id="fileInput" accept="image/*" multiple required class="block w-full text-sm">
+                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">选择照片 (支持多选)</label>
+                <input type="file" id="fileInput" accept="image/*" multiple 
+                    class="block w-full text-sm text-slate-500
+                      file:mr-4 file:py-2.5 file:px-6
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-bold
+                      file:bg-green-50 file:text-green-700
+                      hover:file:bg-green-100
+                      dark:file:bg-green-900/30 dark:file:text-green-400
+                      cursor-pointer border border-gray-300 dark:border-neutral-600 rounded-lg overflow-hidden bg-white dark:bg-neutral-900 transition-colors
+                    ">
             </div>
-            <div class="p-4 bg-neutral-50 dark:bg-neutral-700/50 rounded-lg border border-neutral-200 dark:border-neutral-600">
-                <p class="text-xs text-green-600 font-bold mb-3">📂 相簿设置</p>
-                <div class="mb-3">
-                    <label class="block mb-1 text-xs">相簿名称</label>
-                    <input type="text" id="albumInput" placeholder="例如：风光" required>
-                </div>
+
+            <div class="p-5 bg-slate-50 dark:bg-neutral-700/50 rounded-xl border border-slate-200 dark:border-neutral-600 space-y-4 transition-colors">
+                <h2 class="text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wider flex items-center gap-2">
+                    <span>📂</span> 相簿设置
+                </h2>
+                
                 <div>
-                    <label class="block mb-1 text-xs">相簿简介</label>
-                    <textarea id="albumDescInput" rows="2" placeholder="简介..."></textarea>
+                    <label class="block mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">相簿名称 (必填)</label>
+                    <input type="text" id="albumInput" placeholder="例如：日本旅行" 
+                        class="w-full px-4 py-2.5 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none dark:text-white shadow-sm">
+                </div>
+                
+                <div>
+                    <label class="block mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">相簿简介 (可选，用于新建或更新)</label>
+                    <textarea id="albumDescInput" rows="2" placeholder="关于这个相簿..." 
+                        class="w-full px-4 py-2.5 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none dark:text-white shadow-sm resize-none"></textarea>
                 </div>
             </div>
+            
             <div>
-                <label class="block mb-2 text-sm">照片描述</label>
-                <textarea id="descInput" rows="2" placeholder="拍摄于..."></textarea>
+                <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">照片描述 (通用)</label>
+                <textarea id="descInput" rows="3" placeholder="记录下此刻的心情..." 
+                    class="w-full px-4 py-2.5 bg-slate-50 dark:bg-neutral-900 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none dark:text-white shadow-sm resize-none"></textarea>
             </div>
-            <div id="statusArea" class="hidden mt-4">
-                <div class="w-full bg-neutral-200 h-2.5 rounded-full"><div id="progressBar" class="bg-green-600 h-2.5 rounded-full" style="width:0%"></div></div>
-                <p id="statusText" class="text-xs text-center mt-2">准备上传...</p>
+
+            <div id="statusArea" class="hidden bg-slate-100 dark:bg-neutral-700 p-4 rounded-xl transition-all">
+                <div class="w-full bg-gray-200 dark:bg-neutral-600 rounded-full h-3 overflow-hidden">
+                    <div id="progressBar" class="bg-green-500 h-3 rounded-full transition-all duration-300 progress-bar-striped" style="width: 0%"></div>
+                </div>
+                <p id="statusText" class="text-xs text-center mt-2 font-medium text-gray-500 dark:text-gray-400">准备就绪...</p>
             </div>
-            <button type="submit" id="submitBtn">开始上传 🚀</button>
-        </form>
-        <div class="mt-4 text-center"><a href="/" class="text-sm text-neutral-500">← 返回首页</a></div>
+
+            <button type="button" id="submitBtn" onclick="handleUpload()" 
+                class="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+                开始上传 🚀
+            </button>
+        </div>
+        
+        <div class="mt-6 text-center">
+             <a href="/" class="text-sm font-medium text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors inline-flex items-center gap-1">
+                <span>←</span> 返回首页
+             </a>
+        </div>
     </div>
 
     <script>
-        const supabaseUrl = "{{ supabase_url }}";
-        const supabaseKey = "{{ supabase_key }}";
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-        DMIN_EMAIL = "ylltz2005@163.com"; 
+        // 读取配置
+        const configDiv = document.getElementById('server-config');
+        const supabaseUrl = configDiv.getAttribute('data-url');
+        const supabaseKey = configDiv.getAttribute('data-key');
+        
+        // 管理员邮箱 (请确保与 index.html 一致)
+        const ADMIN_EMAIL = "admin@oreo.com"; 
 
-        async function checkAuth() {
+        let supabase;
+
+        // 权限检查与初始化
+        async function init() {
+            if (!window.supabase) { setTimeout(init, 500); return; }
+            if (!supabaseUrl || supabaseUrl.length < 5) { alert("❌ 后端配置错误"); return; }
+            
+            supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user || user.email !== ADMIN_EMAIL) { alert("无权限"); window.location.href = "/"; }
+            // 简单检查：如果不是指定的管理员邮箱，就踢回首页
+            if (!user || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+                alert("⛔ 您没有上传权限，请使用管理员账号登录。");
+                window.location.href = "/";
+            }
         }
-        checkAuth();
+        init();
 
-        const form = document.getElementById('uploadForm');
+        // EXIF 日期提取工具
         function getTakenDate(file) {
             return new Promise((resolve) => {
                 EXIF.getData(file, function() {
@@ -85,35 +149,80 @@
             });
         }
         
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // 上传主函数
+        async function handleUpload() {
             const files = document.getElementById('fileInput').files;
-            const albumName = document.getElementById('albumInput').value || "未分类";
+            const albumName = document.getElementById('albumInput').value;
             const albumDesc = document.getElementById('albumDescInput').value;
             const photoDesc = document.getElementById('descInput').value;
             const submitBtn = document.getElementById('submitBtn');
             const statusArea = document.getElementById('statusArea');
-            
-            submitBtn.disabled = true; statusArea.classList.remove('hidden');
+            const progressBar = document.getElementById('progressBar');
+            const statusText = document.getElementById('statusText');
+
+            if (files.length === 0) return alert("请先选择照片");
+            if (!albumName) return alert("请填写相簿名称");
+
+            // 锁定界面
+            submitBtn.disabled = true;
+            submitBtn.innerText = "正在处理...";
+            statusArea.classList.remove('hidden');
+            progressBar.style.width = "5%";
 
             try {
-                if (albumDesc) await supabase.from('albums').upsert({ name: albumName, description: albumDesc }, { onConflict: 'name' });
-                
+                // 1. 更新相簿信息
+                if (albumDesc) {
+                    statusText.innerText = `正在更新相簿信息...`;
+                    await supabase.from('albums').upsert({ name: albumName, description: albumDesc }, { onConflict: 'name' });
+                }
+
+                // 2. 循环上传照片
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
-                    document.getElementById('statusText').innerText = `上传中 ${i+1}/${files.length}`;
+                    statusText.innerText = `正在上传 (${i + 1}/${files.length}): ${file.name}`;
+                    progressBar.style.width = `${((i + 0.5) / files.length) * 100}%`; // 假进度
+
+                    // 获取日期
                     const takenAt = await getTakenDate(file);
-                    const safeName = `${Date.now()}_${Math.random().toString(36).substr(2,9)}.${file.name.split('.').pop()}`;
-                    await supabase.storage.from('photos').upload(safeName, file);
+                    
+                    // 上传文件到 Storage
+                    const fileExt = file.name.split('.').pop();
+                    const safeName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+                    const { error: uploadError } = await supabase.storage.from('photos').upload(safeName, file);
+                    if (uploadError) throw uploadError;
+
+                    // 获取公开链接
                     const { data: { publicUrl } } = supabase.storage.from('photos').getPublicUrl(safeName);
-                    await supabase.from('photos').insert({
-                        title: file.name.replace(/\.[^/.]+$/, ""), url: publicUrl, album: albumName, description: photoDesc, taken_at: takenAt
+                    
+                    // 写入数据库
+                    const { error: dbError } = await supabase.from('photos').insert({
+                        title: file.name.replace(/\.[^/.]+$/, ""),
+                        url: publicUrl,
+                        album: albumName,
+                        description: photoDesc,
+                        taken_at: takenAt
                     });
-                    document.getElementById('progressBar').style.width = `${((i+1)/files.length)*100}%`;
+                    if (dbError) throw dbError;
+
+                    // 更新进度条
+                    progressBar.style.width = `${((i + 1) / files.length) * 100}%`;
                 }
-                setTimeout(() => { window.location.href = '/'; }, 500);
-            } catch (err) { alert(err.message); submitBtn.disabled = false; }
-        });
+
+                // 3. 完成
+                statusText.innerText = `🎉 全部完成！即将返回首页...`;
+                progressBar.classList.remove('progress-bar-striped'); // 停止动画表示完成
+                setTimeout(() => { window.location.href = '/'; }, 1500);
+
+            } catch (err) {
+                console.error(err);
+                alert(`❌ 上传出错: ${err.message}`);
+                submitBtn.disabled = false;
+                submitBtn.innerText = "开始上传 🚀";
+                statusText.innerText = "发生错误";
+                progressBar.style.width = "0%";
+                statusArea.classList.add('hidden');
+            }
+        }
     </script>
 </body>
 </html>
