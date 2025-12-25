@@ -55,7 +55,7 @@
         }
 
         /* 侧边导航 */
-        .side-nav { position: fixed; left: 2rem; top: 75%; transform: translateY(-50%); z-index: 50; display: flex; flex-direction: column; gap: 2rem; }
+        .side-nav { position: fixed; left: 2rem; top: 65%; transform: translateY(-50%); z-index: 50; display: flex; flex-direction: column; gap: 2rem; }
         .nav-item { display: flex; align-items: center; gap: 12px; cursor: pointer; opacity: 0.4; transition: all 0.3s ease; text-decoration: none; }
         .nav-item:hover, .nav-item.active { opacity: 1; transform: translateX(5px); }
         .nav-dot { width: 12px; height: 12px; border-radius: 50%; background-color: currentColor; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -64,14 +64,12 @@
         .nav-item.active .nav-dot { background-color: #16a34a; transform: scale(1.5); box-shadow: 0 0 10px rgba(22, 163, 74, 0.4); }
         .nav-item.active .nav-text { font-weight: 800; color: #16a34a; }
 
-        /* 🟢 Swiper 优化：初始隐藏，加载完淡入 */
+        /* Swiper */
         .swiper { 
             width: 100%; height: 45vh; min-height: 320px;
             padding-top: 80px; padding-bottom: 30px; 
-            opacity: 0; /* 一开始看不见 */
-            transition: opacity 0.8s ease-out; /* 优雅的淡入动画 */
+            opacity: 0; transition: opacity 0.8s ease-out;
         }
-        /* 当 JS 给它加上这个类时，才显示 */
         .swiper.loaded { opacity: 1; }
 
         .swiper-slide {
@@ -82,8 +80,9 @@
 
         .slide-inner {
             height: 100%; width: auto; 
-            /* 🟢 关键：给一个最小宽度和背景色，防止0宽崩坏 */
-            min-width: 200px; background: rgba(0,0,0,0.05);
+            /* 🟢 修复：删除了 min-width 和 background */
+            /* 之前是 min-width: 200px; background: rgba(0,0,0,0.05); */
+            /* 现在靠图片自身撑开宽度，背景透明 */
             border-radius: 8px; overflow: hidden; position: relative;
             box-shadow: 0 4px 8px rgba(0,0,0,0.08); transform: scale(0.9); opacity: 0.7;
             transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
@@ -187,7 +186,7 @@
         <h1 class="text-4xl md:text-6xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-500">
             慕心水誥
         </h1>
-        <p class="text-neutral-500 dark:text-neutral-400 text-lg">from 2020 to 2025</p>
+        <p class="text-neutral-500 dark:text-neutral-400 text-lg">from 2020 - 2025</p>
     </header>
 
     <main class="max-w-7xl mx-auto px-4 pb-20">
@@ -247,7 +246,6 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     
     <script>
-        // 🟢 Swiper 高级配置：防止FOUC
         var swiper = new Swiper(".mySwiper", {
             slidesPerView: "auto",
             spaceBetween: 14,
@@ -264,12 +262,10 @@
             },
             mousewheel: true,
             grabCursor: true,
-            
-            // 🟢 监听事件：等初始化完了，再显示，防止一开始乱跳
             on: {
                 init: function () {
                     console.log('Swiper Initialized');
-                    this.el.classList.add('loaded'); // 添加 loaded 类，触发 CSS 淡入
+                    this.el.classList.add('loaded'); 
                     this.update();
                 },
                 imagesReady: function () {
@@ -278,11 +274,9 @@
             }
         });
 
-        // 兜底：页面加载完再刷新一次
         window.onload = function() {
             if(swiper) {
                 swiper.update();
-                // 确保如果 init 没触发，这里也能显示
                 document.querySelector('.swiper').classList.add('loaded');
             }
         };
