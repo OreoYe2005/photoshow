@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>慕心水誥</title>
+    <title>OREO 的摄影集</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
@@ -40,7 +40,7 @@
         .nav-bar {
             position: fixed; top: 0; left: 0; width: 100%; padding: 1.5rem;
             display: flex; justify-content: space-between; align-items: center; z-index: 40;
-            background: rgba(255,255,255,0.0); /* 透明背景 */
+            background: rgba(255,255,255,0.0);
             transition: background 0.3s;
         }
         .nav-bar:hover { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); }
@@ -52,17 +52,16 @@
             backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* 🟢 2. Swiper 核心重构：固定高度，宽度自适应 */
+        /* Swiper 核心样式 */
         .swiper { 
             width: 100%; 
-            height: 60vh; /* 高度占屏幕 60%，非常大气 */
+            height: 60vh;
             min-height: 400px;
             padding-top: 80px; 
             padding-bottom: 40px; 
         }
 
         .swiper-slide {
-            /* 关键点：宽度设为 auto，让图片撑开 */
             width: auto; 
             height: 100%; 
             display: flex; 
@@ -73,35 +72,40 @@
 
         .slide-inner {
             height: 100%; 
-            width: auto; /* 跟随内容宽度 */
-            border-radius: 8px; 
+            width: auto;
+            border-radius: 12px; /* 圆角稍微加大一点点 */
             overflow: hidden;
             position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            /* 稍微缩小非活动图片 */
+            
+            /* 🟢 修改点 1: 非激活状态的阴影，更轻、更贴合 */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            
             transform: scale(0.92); 
             opacity: 0.8;
-            transition: all 0.5s;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* 更顺滑的过渡曲线 */
         }
 
         .swiper-slide-active .slide-inner {
             transform: scale(1);
             opacity: 1;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            
+            /* 🟢 修改点 2: 激活状态的阴影，收紧、变柔和 */
+            /* 之前是 0 20px 50px rgba(0,0,0,0.4)，太夸张了 */
+            box-shadow: 0 12px 24px rgba(0,0,0,0.3); 
+            
             z-index: 10;
         }
 
-        /* 核心修复：图片保持比例，撑满高度 */
         .slide-inner img {
             height: 100%;
             width: auto;
-            object-fit: cover; /* 这里的 cover 只是为了防崩，实际上 width:auto 会让它完整显示 */
+            object-fit: cover;
             display: block;
         }
 
         .slide-title {
             position: absolute; bottom: 0; left: 0; width: 100%;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%); /* 渐变稍微调柔和点 */
             color: white; padding: 20px;
             opacity: 0; transform: translateY(10px);
             transition: all 0.3s;
@@ -123,7 +127,7 @@
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             font-size: 24px; font-weight: bold; z-index: 50;
             background-color: #16a34a; color: white; text-decoration: none;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
             display: none !important; 
         }
     </style>
@@ -166,9 +170,9 @@
 
     <header class="py-10 px-4 text-center">
         <h1 class="text-4xl md:text-6xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-500">
-            慕心水誥
+            OREO 的摄影集
         </h1>
-        <p class="text-neutral-500 dark:text-neutral-400 text-lg">2020-2025</p>
+        <p class="text-neutral-500 dark:text-neutral-400 text-lg">记录光影，定格瞬间。</p>
     </header>
 
     <main class="max-w-7xl mx-auto px-4">
@@ -197,9 +201,8 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     
     <script>
-        // 🟢 初始化 Swiper：支持自适应宽度
         var swiper = new Swiper(".mySwiper", {
-            slidesPerView: "auto", // 关键：让每个 slide 宽度根据内容自适应
+            slidesPerView: "auto",
             spaceBetween: 20,
             centeredSlides: true,
             loop: true,
@@ -209,18 +212,17 @@
                 disableOnInteraction: false,
                 pauseOnMouseEnter: true
             },
-            mousewheel: true, // 支持鼠标滚轮
+            mousewheel: true,
             grabCursor: true
         });
 
-        // 🟢 注入版 Supabase 逻辑
+        // 注入版 Supabase 逻辑
         const configDiv = document.getElementById('server-config');
         const supabaseUrl = configDiv.getAttribute('data-url');
         const supabaseKey = configDiv.getAttribute('data-key');
-        const ADMIN_EMAIL = "admin@oreo.com"; 
+        const ADMIN_EMAIL = "ylltz2005@163.com"; 
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // 检查 Supabase
             if (!window.supabase) return console.error("Supabase 库未加载");
             
             const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -241,9 +243,6 @@
                 if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
                     uploadBtn.style.display = 'flex';
                     uploadBtn.style.setProperty('display', 'flex', 'important');
-                    setTimeout(() => {
-                        console.log("管理员模式已激活");
-                    }, 500);
                 }
             }
         });
