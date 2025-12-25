@@ -7,7 +7,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <script src="https://cdn.bootcdn.net/ajax/libs/supabase.js/2.39.7/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -38,16 +38,15 @@
 
         // 全局点击处理函数
         window.handleLikeClick = async function(btn) {
-            // 获取配置
             const configDiv = document.getElementById('server-config');
             const supabaseUrl = configDiv.getAttribute('data-url');
             const supabaseKey = configDiv.getAttribute('data-key');
             
             // 检查库是否加载
             if (!window.supabaseClient) {
-                // 如果 CDN 挂了，这里会报错
+                // 如果 window.supabase 还是 undefined，说明 CDN 真的被墙了或断网了
                 if (!window.supabase || !window.supabase.createClient) {
-                    return alert("❌ 错误：Supabase 库加载失败，请刷新页面重试。");
+                    return alert("❌ 致命错误：无法连接到 Supabase JS 库。\n请检查您的网络连接（可能需要 VPN）。");
                 }
                 window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
             }
@@ -55,7 +54,6 @@
 
             // 检查登录
             if (!window.currentUser) {
-                // 尝试临时获取会话
                 const { data } = await supabase.auth.getSession();
                 if (data.session) {
                     window.currentUser = data.session.user;
@@ -72,7 +70,7 @@
             let currentCount = parseInt(countSpan.innerText) || 0;
             const isLiked = btn.getAttribute('data-liked') === "true";
 
-            // 乐观更新 UI
+            // 乐观更新
             if (isLiked) {
                 btn.setAttribute('data-liked', "false");
                 icon.style.color = ''; 
@@ -94,7 +92,6 @@
                 }
             } catch (err) {
                 console.error("操作失败:", err);
-                // 失败回滚
                 btn.setAttribute('data-liked', isLiked ? "true" : "false");
                 icon.style.color = isLiked ? '#ef4444' : '';
                 countSpan.innerText = currentCount;
@@ -118,7 +115,6 @@
         .photo-card { break-inside: avoid; margin-bottom: 1.5rem; background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; transition: transform 0.3s; }
         .dark .photo-card { background: #262626; }
         
-        /* 点赞按钮样式 */
         .like-btn-area { cursor: pointer; z-index: 50; position: relative; user-select: none; padding: 4px 8px; border-radius: 99px; }
         .like-btn-area:hover { background-color: rgba(0,0,0,0.05); }
         .dark .like-btn-area:hover { background-color: rgba(255,255,255,0.1); }
@@ -200,23 +196,24 @@
             const supabaseUrl = configDiv.getAttribute('data-url');
             const supabaseKey = configDiv.getAttribute('data-key');
 
-            // 初始化 Supabase
-            if (window.supabase && window.supabase.createClient) {
-                window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-                
-                // 检查登录状态
-                const { data: { session } } = await window.supabaseClient.auth.getSession();
-                if (session) {
-                    window.currentUser = session.user;
-                    if (window.currentUser.email.toLowerCase() === window.ADMIN_EMAIL.toLowerCase()) {
-                        document.querySelectorAll('.admin-only').forEach(el => {
-                            el.classList.remove('hidden'); el.style.display = 'block';
-                        });
-                    }
-                    checkMyLikes();
+            // 🟢 确保 window.supabase 存在
+            if (!window.supabase) {
+                console.error("Supabase 库未加载");
+                return;
+            }
+            
+            window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+            
+            // 检查登录状态
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (session) {
+                window.currentUser = session.user;
+                if (window.currentUser.email.toLowerCase() === window.ADMIN_EMAIL.toLowerCase()) {
+                    document.querySelectorAll('.admin-only').forEach(el => {
+                        el.classList.remove('hidden'); el.style.display = 'block';
+                    });
                 }
-            } else {
-                console.error("Supabase CDN 加载失败");
+                checkMyLikes();
             }
         });
 
