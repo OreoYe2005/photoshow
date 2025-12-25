@@ -34,7 +34,6 @@
     </script>
     
     <style>
-        /* 🟢 设置滚动偏移量，防止跳转时内容被顶部导航栏挡住 */
         html { scroll-padding-top: 100px; }
         
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; color: #171717; }
@@ -55,36 +54,50 @@
             backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* 🟢 侧边导航样式 */
+        /* 🟢 改版侧边导航：文字常驻，圆点变大 */
         .side-nav {
             position: fixed; left: 2rem; top: 50%; transform: translateY(-50%);
-            z-index: 50; display: flex; flex-direction: column; gap: 1.5rem;
+            z-index: 50; display: flex; flex-direction: column; gap: 2rem; /* 间距拉大 */
         }
+        
+        .nav-item {
+            display: flex; align-items: center; gap: 12px; /* 文字和圆点的距离 */
+            cursor: pointer; opacity: 0.4; /* 默认半透明 */
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        /* 鼠标悬停或激活时 */
+        .nav-item:hover, .nav-item.active {
+            opacity: 1; 
+            transform: translateX(5px); /* 微微向右移动 */
+        }
+
         .nav-dot {
-            width: 10px; height: 10px; border-radius: 50%;
-            background-color: rgba(0,0,0,0.2);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative; cursor: pointer;
+            width: 12px; height: 12px; /* 圆点加大 */
+            border-radius: 50%;
+            background-color: currentColor; /* 跟随文字颜色 */
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .dark .nav-dot { background-color: rgba(255,255,255,0.2); }
-        
-        /* 激活状态 */
-        .nav-dot.active {
+
+        .nav-text {
+            font-size: 14px; font-weight: 500;
+            color: #171717; /* 默认黑色 */
+            white-space: nowrap;
+        }
+        .dark .nav-text { color: #ffffff; }
+
+        /* 激活状态特写 */
+        .nav-item.active .nav-dot {
             background-color: #16a34a; /* 绿色 */
-            transform: scale(1.4);
-            box-shadow: 0 0 10px rgba(22, 163, 74, 0.5);
+            transform: scale(1.5); /* 放大 */
+            box-shadow: 0 0 10px rgba(22, 163, 74, 0.4);
         }
-        
-        /* 悬停显示的文字标签 */
-        .nav-label {
-            position: absolute; left: 20px; top: 50%; transform: translateY(-50%) translateX(-10px);
-            background: rgba(0,0,0,0.8); color: white; padding: 4px 10px; border-radius: 6px;
-            font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none;
-            transition: all 0.3s;
+        .nav-item.active .nav-text {
+            font-weight: 800; /* 加粗 */
+            color: #16a34a; /* 绿色文字 */
         }
-        .dark .nav-label { background: rgba(255,255,255,0.9); color: black; }
-        
-        .nav-dot:hover .nav-label { opacity: 1; transform: translateY(-50%) translateX(0); }
+
 
         /* Swiper */
         .swiper { 
@@ -156,15 +169,18 @@
     </button>
 
     <aside class="side-nav hidden md:flex">
-        <a href="#section-hero" class="nav-dot group active" title="精选">
-            <span class="nav-label">精选</span>
+        <a href="#section-hero" class="nav-item group active">
+            <div class="nav-dot"></div>
+            <span class="nav-text">精选</span>
         </a>
-        <a href="#section-albums" class="nav-dot group" title="相簿">
-            <span class="nav-label">相簿</span>
+        <a href="#section-albums" class="nav-item group">
+            <div class="nav-dot"></div>
+            <span class="nav-text">相簿</span>
         </a>
         {% if memories %}
-        <a href="#section-memories" class="nav-dot group" title="回忆">
-            <span class="nav-label">回忆</span>
+        <a href="#section-memories" class="nav-item group">
+            <div class="nav-dot"></div>
+            <span class="nav-text">回忆</span>
         </a>
         {% endif %}
     </aside>
@@ -283,23 +299,23 @@
             }
         };
 
-        // 🟢 3. 智能侧边栏：滚动监听高亮
+        // 🟢 智能侧边栏：滚动监听高亮 (修正版)
         document.addEventListener('DOMContentLoaded', () => {
             const sections = document.querySelectorAll('div[id^="section-"]');
-            const navDots = document.querySelectorAll('.nav-dot');
+            const navItems = document.querySelectorAll('.nav-item');
 
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         // 移除所有激活状态
-                        navDots.forEach(dot => dot.classList.remove('active'));
-                        // 找到当前对应的导航点
-                        const activeLink = document.querySelector(`.nav-dot[href="#${entry.target.id}"]`);
+                        navItems.forEach(item => item.classList.remove('active'));
+                        // 找到当前对应的导航链接
+                        const activeLink = document.querySelector(`.nav-item[href="#${entry.target.id}"]`);
                         if (activeLink) activeLink.classList.add('active');
                     }
                 });
             }, {
-                threshold: 0.3 // 当板块出现 30% 时触发
+                threshold: 0.2 // 稍微降低触发门槛，更灵敏
             });
 
             sections.forEach(section => observer.observe(section));
@@ -308,7 +324,7 @@
         const configDiv = document.getElementById('server-config');
         const supabaseUrl = configDiv.getAttribute('data-url');
         const supabaseKey = configDiv.getAttribute('data-key');
-        const ADMIN_EMAIL = "admin@oreo.com"; 
+        const ADMIN_EMAIL = "ylltz2005@163.com"; 
 
         document.addEventListener('DOMContentLoaded', async () => {
             if (!window.supabase) return console.error("Supabase 库未加载");
