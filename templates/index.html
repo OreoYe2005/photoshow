@@ -52,13 +52,14 @@
             backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* Swiper */
+        /* 🟢 修改点 1：大幅缩小高度，使其更加精致 */
         .swiper { 
             width: 100%; 
-            height: 60vh;
-            min-height: 400px;
-            padding-top: 80px; 
-            padding-bottom: 40px; 
+            /* 从 60vh 降到 45vh，既能看清细节，又不至于压迫感太强 */
+            height: 45vh; 
+            min-height: 320px; /* 最小高度也减小 */
+            padding-top: 80px; /* 顶部留白保持，避开导航栏 */
+            padding-bottom: 30px; 
         }
 
         .swiper-slide {
@@ -73,19 +74,19 @@
         .slide-inner {
             height: 100%; 
             width: auto;
-            border-radius: 12px;
+            border-radius: 8px; /* 圆角稍微改小一点，更显干练 */
             overflow: hidden;
             position: relative;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            transform: scale(0.92); 
-            opacity: 0.8;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            transform: scale(0.9); /* 未激活状态缩得更小一点，突出中间 */
+            opacity: 0.7; /* 未激活状态更淡一点 */
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
         .swiper-slide-active .slide-inner {
             transform: scale(1);
             opacity: 1;
-            box-shadow: 0 12px 24px rgba(0,0,0,0.3); 
+            box-shadow: 0 12px 24px rgba(0,0,0,0.25); 
             z-index: 10;
         }
 
@@ -98,15 +99,13 @@
 
         .slide-title {
             position: absolute; bottom: 0; left: 0; width: 100%;
-            /* 黑色渐变条一直存在 */
             background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%); 
-            color: white; padding: 24px 20px;
+            color: white; padding: 20px 16px;
             opacity: 0; transform: translateY(10px);
             transition: all 0.3s;
         }
         .swiper-slide-active .slide-title { opacity: 1; transform: translateY(0); }
 
-        /* 相簿列表 */
         .album-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; padding-bottom: 5rem; }
         @media (min-width: 768px) { .album-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1024px) { .album-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -148,12 +147,12 @@
             {% for photo in hero_photos %}
             <div class="swiper-slide">
                 <div class="slide-inner">
-                    <img src="{{ photo.url }}" loading="lazy" alt="{{ photo.title }}">
+                    <img src="{{ photo.url }}" loading="lazy" alt="photo">
+                    {% if photo.description %}
                     <div class="slide-title">
-                        {% if photo.description %}
-                        <p class="text-sm md:text-base font-medium opacity-95 leading-snug line-clamp-2 drop-shadow-sm">{{ photo.description }}</p>
-                        {% endif %}
+                        <p class="font-medium text-sm md:text-base text-white/95 leading-relaxed line-clamp-2 drop-shadow-sm">{{ photo.description }}</p>
                     </div>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -196,9 +195,13 @@
     <script>
         var swiper = new Swiper(".mySwiper", {
             slidesPerView: "auto",
-            spaceBetween: 20,
+            // 🟢 修改点 2：间距改紧凑一点，让“照片墙”的感觉更强
+            spaceBetween: 14, 
             centeredSlides: true,
             loop: true,
+            // 🟢 关键修改点 3：增加 loopAdditionalSlides
+            // 强制 Swiper 在两侧多渲染 5 张图，这样即使遇到很窄的竖图，右边也不会空出来
+            loopAdditionalSlides: 5,
             speed: 800,
             autoplay: {
                 delay: 3000,
