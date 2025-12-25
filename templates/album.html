@@ -6,7 +6,8 @@
     <title>{{ album_name }} | OREO</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="{{ url_for('static', filename='supabase.min.js') }}"></script>
     
     <script>
         tailwind.config = {
@@ -31,30 +32,27 @@
     </script>
 
     <script>
-        // 定义全局变量
         window.ADMIN_EMAIL = "admin@oreo.com";
         window.currentUser = null;
         window.supabase = null;
 
-        // 🟢 核心点击函数 (挂载在 window 上，保证绝对能被调用)
+        // 全局点击处理函数
         window.handleLikeClick = async function(btn) {
-            console.log("👆 按钮被点击了！");
-            
             // 1. 获取配置
             const configDiv = document.getElementById('server-config');
             const supabaseUrl = configDiv.getAttribute('data-url');
             const supabaseKey = configDiv.getAttribute('data-key');
             
-            // 2. 临时初始化 Supabase (懒加载，防止页面崩)
+            // 2. 初始化检查
             if (!window.supabaseClient) {
-                if (!window.supabase) return alert("Supabase JS 库未加载，请检查网络");
+                // 🟢 这里加个保险：如果本地文件也没加载，弹窗提示
+                if (!window.supabase) return alert("❌ 严重错误：static/supabase.min.js 文件未加载！请检查文件是否存在。");
                 window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
             }
             const supabase = window.supabaseClient;
 
             // 3. 检查登录
             if (!window.currentUser) {
-                // 尝试临时获取一下用户
                 const { data } = await supabase.auth.getSession();
                 if (data.session) {
                     window.currentUser = data.session.user;
@@ -71,14 +69,12 @@
             let currentCount = parseInt(countSpan.innerText) || 0;
             const isLiked = btn.getAttribute('data-liked') === "true";
 
-            // 5. 乐观更新 UI
+            // 5. 乐观更新
             if (isLiked) {
-                // 取消
                 btn.setAttribute('data-liked', "false");
                 icon.style.color = ''; 
                 countSpan.innerText = Math.max(0, currentCount - 1);
             } else {
-                // 点赞
                 btn.setAttribute('data-liked', "true");
                 icon.style.color = '#ef4444';
                 countSpan.innerText = currentCount + 1;
@@ -95,7 +91,6 @@
                 }
             } catch (err) {
                 console.error("操作失败:", err);
-                // 回滚
                 btn.setAttribute('data-liked', isLiked ? "true" : "false");
                 icon.style.color = isLiked ? '#ef4444' : '';
                 countSpan.innerText = currentCount;
@@ -119,18 +114,9 @@
         .photo-card { break-inside: avoid; margin-bottom: 1.5rem; background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; transition: transform 0.3s; }
         .dark .photo-card { background: #262626; }
         
-        /* 🔴 调试边框：这个红框能让你看清按钮在哪里，确认是否被遮挡 */
-        /* 调试完成后，把 border: 1px solid red; 删掉即可 */
-        .debug-btn-area {
-            cursor: pointer;
-            z-index: 50;
-            position: relative;
-            user-select: none;
-            padding: 4px 8px;
-            border-radius: 99px;
-            background-color: rgba(0,0,0,0.02);
-            /* border: 1px solid red;  <-- 如果你想看点击区域，取消这行注释 */
-        }
+        /* 调试点击区域 */
+        .debug-btn-area { cursor: pointer; z-index: 50; position: relative; user-select: none; padding: 4px 8px; border-radius: 99px; }
+        .debug-btn-area:hover { background-color: rgba(0,0,0,0.05); }
     </style>
 </head>
 <body class="bg-lightBg text-neutral-900 dark:bg-neutral-900 dark:text-white transition-colors duration-300">
@@ -161,14 +147,16 @@
     <main class="max-w-7xl mx-auto px-4 pb-20">
         {% if grouped_photos|length == 0 %}
             <div class="text-center text-neutral-500 mt-20 flex flex-col items-center">
-                <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                 <p>暂无照片</p>
             </div>
         {% else %}
             {% for group in grouped_photos %}
                 <div class="py-4 mb-4">
-                    <h2 class="text-xl font-bold text-green-600 dark:text-green-400 pl-3 border-l-4 border-green-500">{{ group.date }}</h2>
+                    <h2 class="text-xl font-bold text-green-600 dark:text-green-400 pl-3 border-l-4 border-green-500">
+                        {{ group.date }}
+                    </h2>
                 </div>
+                
                 <div class="masonry-layout">
                     {% for photo in group.photos %}
                     <div class="photo-card group relative">
@@ -203,25 +191,27 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log("页面加载完毕");
-            
             const configDiv = document.getElementById('server-config');
             const supabaseUrl = configDiv.getAttribute('data-url');
             const supabaseKey = configDiv.getAttribute('data-key');
 
-            if (!window.supabase) return;
+            // 🟢 检查本地文件是否生效
+            if (!window.supabase) {
+                console.error("Supabase 本地库加载失败！");
+                return;
+            }
+            
             window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
             
+            // 检查登录状态
             const { data: { session } } = await window.supabaseClient.auth.getSession();
             if (session) {
                 window.currentUser = session.user;
-                // 显示管理员按钮
                 if (window.currentUser.email.toLowerCase() === window.ADMIN_EMAIL.toLowerCase()) {
                     document.querySelectorAll('.admin-only').forEach(el => {
                         el.classList.remove('hidden'); el.style.display = 'block';
                     });
                 }
-                // 初始化点赞状态
                 checkMyLikes();
             }
         });
@@ -241,7 +231,6 @@
             }
         }
         
-        // 删除函数
         window.deletePhoto = async function(pid) {
             if(!confirm("⚠️ 确定要删除吗？")) return;
             const { error } = await window.supabaseClient.from('photos').delete().eq('id', pid);
