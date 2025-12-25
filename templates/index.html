@@ -34,8 +34,8 @@
     </script>
     
     <style>
-        body { margin: 0; font-family: sans-serif; background-color: #f8fafc; color: #171717; }
-        .dark body { background-color: #171717; color: #ffffff; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; color: #171717; }
+        .dark body { background-color: #000000; color: #ffffff; }
 
         .nav-bar {
             position: fixed; top: 0; left: 0; width: 100%; padding: 1.5rem;
@@ -52,62 +52,84 @@
             backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
+        /* Swiper */
         .swiper { 
             width: 100%; 
             height: 45vh; 
             min-height: 320px;
-            padding-top: 80px;
+            padding-top: 80px; 
             padding-bottom: 30px; 
         }
 
         .swiper-slide {
-            /* 🟢 关键 CSS 1：强制不压缩，宽度自适应 */
             width: auto !important; 
             height: 100%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            flex-shrink: 0; /* 防止被挤压 */
-            transition: transform 0.5s ease;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: transform 0.5s ease;
         }
 
         .slide-inner {
-            height: 100%; 
-            width: auto;
-            border-radius: 8px;
-            overflow: hidden;
-            position: relative;
+            height: 100%; width: auto;
+            border-radius: 8px; overflow: hidden; position: relative;
             box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-            transform: scale(0.9); 
-            opacity: 0.7;
+            transform: scale(0.9); opacity: 0.7;
             transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
         .swiper-slide-active .slide-inner {
-            transform: scale(1);
-            opacity: 1;
-            box-shadow: 0 12px 24px rgba(0,0,0,0.25); 
-            z-index: 10;
+            transform: scale(1); opacity: 1;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.25); z-index: 10;
         }
 
-        /* 🟢 关键 CSS 2：图片强制撑满高度，宽度自然伸缩 */
         .slide-inner img {
-            height: 100% !important;
-            width: auto !important;
-            max-width: none !important; /* 防止 max-width: 100% 限制了竖图的自然宽度 */
-            object-fit: cover;
-            display: block;
+            height: 100% !important; width: auto !important; max-width: none !important;
+            object-fit: cover; display: block;
         }
 
         .slide-title {
             position: absolute; bottom: 0; left: 0; width: 100%;
             background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%); 
             color: white; padding: 20px 16px;
-            opacity: 0; transform: translateY(10px);
-            transition: all 0.3s;
+            opacity: 0; transform: translateY(10px); transition: all 0.3s;
         }
         .swiper-slide-active .slide-title { opacity: 1; transform: translateY(0); }
 
+        /* 回忆板块 */
+        .memory-card {
+            position: relative; overflow: hidden; border-radius: 24px; 
+            aspect-ratio: 4/5; cursor: pointer; 
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.15);
+        }
+        .memory-card img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .memory-card:hover img { transform: scale(1.1); }
+        
+        .memory-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 20%, transparent 60%, rgba(0,0,0,0.6) 100%);
+            display: flex; flex-col; justify-content: space-between; padding: 1.5rem;
+        }
+        .memory-title {
+            color: white; font-weight: 800; font-size: 1.8rem; line-height: 1.1;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            letter-spacing: -0.02em;
+        }
+        .memory-date {
+            color: rgba(255,255,255,0.9); font-size: 0.75rem; font-weight: 600; 
+            text-transform: uppercase; letter-spacing: 0.1em;
+            margin-bottom: 0.5rem; display: block;
+        }
+        .play-icon {
+            width: 32px; height: 32px; background: rgba(255,255,255,0.3); backdrop-filter: blur(10px);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transform: scale(0.8); transition: all 0.3s;
+        }
+        .memory-card:hover .play-icon { opacity: 1; transform: scale(1); }
+
+        /* 相簿列表 */
         .album-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; padding-bottom: 5rem; }
         @media (min-width: 768px) { .album-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1024px) { .album-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -169,22 +191,56 @@
         <p class="text-neutral-500 dark:text-neutral-400 text-lg">2020-2025</p>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4">
-        {% if albums|length == 0 %}
-            <div class="text-center text-neutral-500 py-20">暂无相簿</div>
-        {% else %}
-            <div class="album-grid">
-                {% for album in albums %}
-                <a href="/album/{{ album.name }}" class="album-card group shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-                    <img src="{{ album.cover }}" loading="lazy">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
-                    <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                        <h2 class="text-3xl font-bold text-white mb-1 drop-shadow-md">{{ album.name }}</h2>
-                        <p class="text-green-300 text-sm font-medium uppercase tracking-widest">{{ album.count }} 张照片</p>
+    <main class="max-w-7xl mx-auto px-4 pb-20">
+        
+        <div>
+            <h2 class="text-xl font-bold mb-5 text-neutral-500 dark:text-neutral-400 uppercase tracking-widest text-sm">所有相簿</h2>
+            {% if albums|length == 0 %}
+                <div class="text-center text-neutral-500 py-10">暂无相簿</div>
+            {% else %}
+                <div class="album-grid">
+                    {% for album in albums %}
+                    <a href="/album/{{ album.name }}" class="album-card group shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
+                        <img src="{{ album.cover }}" loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                            <h2 class="text-3xl font-bold text-white mb-1 drop-shadow-md">{{ album.name }}</h2>
+                            <p class="text-green-300 text-sm font-medium uppercase tracking-widest">{{ album.count }} 张照片</p>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        {% if memories %}
+        <div class="border-t border-gray-200 dark:border-neutral-800 my-12"></div>
+
+        <div class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center justify-center gap-2 text-black dark:text-white">
+                <span>✨ 为您推荐</span>
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {% for memory in memories %}
+                <a href="/album/{{ memory.name }}" class="memory-card group">
+                    <img src="{{ memory.cover }}" loading="lazy">
+                    <div class="memory-overlay">
+                        <div class="w-full flex justify-between items-start">
+                            <span class="memory-date">MEMORIES</span>
+                            <div class="play-icon">
+                                <svg class="w-3 h-3 text-white fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="memory-title">{{ memory.name }}</h3>
+                            <p class="text-white/80 text-sm mt-1">回顾精彩瞬间 &rarr;</p>
+                        </div>
                     </div>
                 </a>
                 {% endfor %}
             </div>
+        </div>
         {% endif %}
 
         <a href="/upload" id="uploadBtn" class="hover:bg-green-500 transition-transform hover:scale-110 hover:rotate-90">
@@ -196,20 +252,15 @@
     
     <script>
         var swiper = new Swiper(".mySwiper", {
-            // 🟢 关键配置 1：自动宽度
             slidesPerView: "auto",
             spaceBetween: 14,
             centeredSlides: true,
-            
-            // 🟢 关键配置 2：开启监听。一旦图片加载完撑开 div，自动更新布局
             observer: true,
             observeParents: true,
             updateOnImagesReady: true,
-
-            // 🟢 关键配置 3：Loop 配置
             loop: true,
-            loopedSlides: 8, // 设置足够多的替补数量，防止宽屏断档
-            
+            loopedSlides: 10, // 保持防断档设置
+            loopAdditionalSlides: 5,
             speed: 600,
             autoplay: {
                 delay: 3000,
@@ -220,8 +271,6 @@
             grabCursor: true
         });
 
-        // 🟢 关键配置 4：万能补丁
-        // 有时候 observer 反应慢，我们在页面全部加载完后（所有图片就位），强制更新一次
         window.onload = function() {
             if(swiper) {
                 console.log("正在强制校准 Swiper 布局...");
@@ -229,7 +278,6 @@
             }
         };
 
-        // Supabase 逻辑
         const configDiv = document.getElementById('server-config');
         const supabaseUrl = configDiv.getAttribute('data-url');
         const supabaseKey = configDiv.getAttribute('data-key');

@@ -17,6 +17,7 @@ SUPABASE_URL = "https://vupgwbjkdvriurufruua.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1cGd3YmprZHZyaXVydWZydXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyODUyOTEsImV4cCI6MjA4MDg2MTI5MX0.Hdk6pmuOdv8EKAZwYqUlhQozEhxPybOWt0I85tgF1Hw"
 
 
+
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 except Exception as e:
@@ -42,12 +43,13 @@ def home():
         response = supabase.table('photos').select("*").order('created_at', desc=True).execute()
         all_data = response.data
         
-        # 随机取 10 张作为 Hero 轮播图
+        # 1. 轮播图：随机取 10 张
         if len(all_data) > 10:
             hero_photos = random.sample(all_data, 10)
         else:
             hero_photos = all_data
 
+        # 2. 整理相簿数据
         albums_dict = {}
         for item in all_data:
             album_name = item.get('album', '默认相簿')
@@ -55,12 +57,22 @@ def home():
                 albums_dict[album_name] = { "name": album_name, "cover": item['url'], "count": 0 }
             albums_dict[album_name]['count'] += 1
         
+        all_albums_list = list(albums_dict.values())
+
+        # 🟢 3. 新增：随机抽取 2 个相簿作为“回忆” (Memories)
+        # 如果相簿总数少于 2 个，就全显示
+        if len(all_albums_list) > 2:
+            memories = random.sample(all_albums_list, 2)
+        else:
+            memories = all_albums_list
+
         return render_template('index.html', 
-                               albums=list(albums_dict.values()), 
+                               albums=all_albums_list, 
+                               memories=memories, # 传给前端
                                hero_photos=hero_photos,
                                supabase_url=SUPABASE_URL, 
                                supabase_key=SUPABASE_KEY,
-                               supabase_js_code=SUPABASE_JS_CODE) # 🟢 记得加上这行！
+                               supabase_js_code=SUPABASE_JS_CODE)
     except Exception as e:
         print(f"Home Error: {e}")
         return f"Error loading home: {e}", 500
@@ -76,7 +88,6 @@ def show_album(album_name):
 
         response = supabase.table('photos').select("*").eq('album', album_name).order('taken_at', desc=True).execute()
         
-        # 获取点赞数据
         photo_ids = [p['id'] for p in response.data]
         likes_map = {}
         if photo_ids:
