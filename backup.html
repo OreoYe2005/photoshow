@@ -54,41 +54,66 @@
             backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* 侧边导航 */
-        .side-nav { position: fixed; left: 2rem; top: 75%; transform: translateY(-50%); z-index: 50; display: flex; flex-direction: column; gap: 2rem; }
-        .nav-item { display: flex; align-items: center; gap: 12px; cursor: pointer; opacity: 0.4; transition: all 0.3s ease; text-decoration: none; }
-        .nav-item:hover, .nav-item.active { opacity: 1; transform: translateX(5px); }
-        .nav-dot { width: 12px; height: 12px; border-radius: 50%; background-color: currentColor; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .nav-text { font-size: 14px; font-weight: 500; color: #171717; white-space: nowrap; }
-        .dark .nav-text { color: #ffffff; }
-        .nav-item.active .nav-dot { background-color: #16a34a; transform: scale(1.5); box-shadow: 0 0 10px rgba(22, 163, 74, 0.4); }
-        .nav-item.active .nav-text { font-weight: 800; color: #16a34a; }
+        /* 🟢 改版侧边导航：文字常驻，圆点变大 */
+        .side-nav {
+            position: fixed; left: 2rem; top: 75%; transform: translateY(-50%);
+            z-index: 50; display: flex; flex-direction: column; gap: 2rem; /* 间距拉大 */
+        }
+        
+        .nav-item {
+            display: flex; align-items: center; gap: 12px; /* 文字和圆点的距离 */
+            cursor: pointer; opacity: 0.4; /* 默认半透明 */
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        /* 鼠标悬停或激活时 */
+        .nav-item:hover, .nav-item.active {
+            opacity: 1; 
+            transform: translateX(5px); /* 微微向右移动 */
+        }
 
-        /* 🟢 Swiper 优化：初始隐藏，加载完淡入 */
+        .nav-dot {
+            width: 12px; height: 12px; /* 圆点加大 */
+            border-radius: 50%;
+            background-color: currentColor; /* 跟随文字颜色 */
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-text {
+            font-size: 14px; font-weight: 500;
+            color: #171717; /* 默认黑色 */
+            white-space: nowrap;
+        }
+        .dark .nav-text { color: #ffffff; }
+
+        /* 激活状态特写 */
+        .nav-item.active .nav-dot {
+            background-color: #16a34a; /* 绿色 */
+            transform: scale(1.5); /* 放大 */
+            box-shadow: 0 0 10px rgba(22, 163, 74, 0.4);
+        }
+        .nav-item.active .nav-text {
+            font-weight: 800; /* 加粗 */
+            color: #16a34a; /* 绿色文字 */
+        }
+
+
+        /* Swiper */
         .swiper { 
             width: 100%; height: 45vh; min-height: 320px;
             padding-top: 80px; padding-bottom: 30px; 
-            opacity: 0; /* 一开始看不见 */
-            transition: opacity 0.8s ease-out; /* 优雅的淡入动画 */
         }
-        /* 当 JS 给它加上这个类时，才显示 */
-        .swiper.loaded { opacity: 1; }
-
         .swiper-slide {
             width: auto !important; height: 100%; 
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0; transition: transform 0.5s ease;
         }
-
         .slide-inner {
-            height: 100%; width: auto; 
-            /* 🟢 关键：给一个最小宽度和背景色，防止0宽崩坏 */
-            min-width: 200px; background: rgba(0,0,0,0.05);
-            border-radius: 8px; overflow: hidden; position: relative;
+            height: 100%; width: auto; border-radius: 8px; overflow: hidden; position: relative;
             box-shadow: 0 4px 8px rgba(0,0,0,0.08); transform: scale(0.9); opacity: 0.7;
             transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
-
         .swiper-slide-active .slide-inner { transform: scale(1); opacity: 1; box-shadow: 0 12px 24px rgba(0,0,0,0.25); z-index: 10; }
         .slide-inner img { height: 100% !important; width: auto !important; max-width: none !important; object-fit: cover; display: block; }
         .slide-title {
@@ -213,10 +238,12 @@
 
         {% if memories %}
         <div class="border-t border-gray-200 dark:border-neutral-800 my-12"></div>
+
         <div id="section-memories" class="mb-12">
             <h2 class="text-2xl font-bold mb-6 flex items-center justify-center gap-2 text-black dark:text-white">
-                <span>✨ 为您推荐</span>
+                <span>✨ 回忆 Memory</span>
             </h2>
+            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {% for memory in memories %}
                 <a href="/album/{{ memory.name }}" class="memory-card group">
@@ -247,7 +274,6 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     
     <script>
-        // 🟢 Swiper 高级配置：防止FOUC
         var swiper = new Swiper(".mySwiper", {
             slidesPerView: "auto",
             spaceBetween: 14,
@@ -263,30 +289,17 @@
                 pauseOnMouseEnter: true
             },
             mousewheel: true,
-            grabCursor: true,
-            
-            // 🟢 监听事件：等初始化完了，再显示，防止一开始乱跳
-            on: {
-                init: function () {
-                    console.log('Swiper Initialized');
-                    this.el.classList.add('loaded'); // 添加 loaded 类，触发 CSS 淡入
-                    this.update();
-                },
-                imagesReady: function () {
-                    this.update();
-                }
-            }
+            grabCursor: true
         });
 
-        // 兜底：页面加载完再刷新一次
         window.onload = function() {
             if(swiper) {
+                console.log("正在强制校准 Swiper 布局...");
                 swiper.update();
-                // 确保如果 init 没触发，这里也能显示
-                document.querySelector('.swiper').classList.add('loaded');
             }
         };
 
+        // 🟢 智能侧边栏：滚动监听高亮 (修正版)
         document.addEventListener('DOMContentLoaded', () => {
             const sections = document.querySelectorAll('div[id^="section-"]');
             const navItems = document.querySelectorAll('.nav-item');
@@ -294,13 +307,15 @@
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
+                        // 移除所有激活状态
                         navItems.forEach(item => item.classList.remove('active'));
+                        // 找到当前对应的导航链接
                         const activeLink = document.querySelector(`.nav-item[href="#${entry.target.id}"]`);
                         if (activeLink) activeLink.classList.add('active');
                     }
                 });
             }, {
-                threshold: 0.2
+                threshold: 0.2 // 稍微降低触发门槛，更灵敏
             });
 
             sections.forEach(section => observer.observe(section));
