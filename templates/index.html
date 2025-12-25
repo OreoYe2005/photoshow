@@ -34,6 +34,9 @@
     </script>
     
     <style>
+        /* 🟢 设置滚动偏移量，防止跳转时内容被顶部导航栏挡住 */
+        html { scroll-padding-top: 100px; }
+        
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; color: #171717; }
         .dark body { background-color: #000000; color: #ffffff; }
 
@@ -52,86 +55,71 @@
             backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* Swiper 容器 */
+        /* 🟢 侧边导航样式 */
+        .side-nav {
+            position: fixed; left: 2rem; top: 50%; transform: translateY(-50%);
+            z-index: 50; display: flex; flex-direction: column; gap: 1.5rem;
+        }
+        .nav-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background-color: rgba(0,0,0,0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; cursor: pointer;
+        }
+        .dark .nav-dot { background-color: rgba(255,255,255,0.2); }
+        
+        /* 激活状态 */
+        .nav-dot.active {
+            background-color: #16a34a; /* 绿色 */
+            transform: scale(1.4);
+            box-shadow: 0 0 10px rgba(22, 163, 74, 0.5);
+        }
+        
+        /* 悬停显示的文字标签 */
+        .nav-label {
+            position: absolute; left: 20px; top: 50%; transform: translateY(-50%) translateX(-10px);
+            background: rgba(0,0,0,0.8); color: white; padding: 4px 10px; border-radius: 6px;
+            font-size: 12px; white-space: nowrap; opacity: 0; pointer-events: none;
+            transition: all 0.3s;
+        }
+        .dark .nav-label { background: rgba(255,255,255,0.9); color: black; }
+        
+        .nav-dot:hover .nav-label { opacity: 1; transform: translateY(-50%) translateX(0); }
+
+        /* Swiper */
         .swiper { 
-            width: 100%; 
-            height: 45vh; 
-            min-height: 320px;
-            padding-top: 80px; 
-            padding-bottom: 30px; 
+            width: 100%; height: 45vh; min-height: 320px;
+            padding-top: 80px; padding-bottom: 30px; 
         }
-
         .swiper-slide {
-            /* 强制宽度自适应，禁止压缩 */
-            width: auto !important; 
-            height: 100%; 
+            width: auto !important; height: 100%; 
             display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; 
-            transition: transform 0.5s ease;
+            flex-shrink: 0; transition: transform 0.5s ease;
         }
-
         .slide-inner {
-            height: 100%; width: auto;
-            border-radius: 8px; overflow: hidden; position: relative;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-            transform: scale(0.9); opacity: 0.7;
+            height: 100%; width: auto; border-radius: 8px; overflow: hidden; position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08); transform: scale(0.9); opacity: 0.7;
             transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
-
-        .swiper-slide-active .slide-inner {
-            transform: scale(1); opacity: 1;
-            box-shadow: 0 12px 24px rgba(0,0,0,0.25); z-index: 10;
-        }
-
-        .slide-inner img {
-            height: 100% !important; width: auto !important; max-width: none !important;
-            object-fit: cover; display: block;
-        }
-
+        .swiper-slide-active .slide-inner { transform: scale(1); opacity: 1; box-shadow: 0 12px 24px rgba(0,0,0,0.25); z-index: 10; }
+        .slide-inner img { height: 100% !important; width: auto !important; max-width: none !important; object-fit: cover; display: block; }
         .slide-title {
             position: absolute; bottom: 0; left: 0; width: 100%;
             background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%); 
-            color: white; padding: 20px 16px;
-            opacity: 0; transform: translateY(10px); transition: all 0.3s;
+            color: white; padding: 20px 16px; opacity: 0; transform: translateY(10px); transition: all 0.3s;
         }
         .swiper-slide-active .slide-title { opacity: 1; transform: translateY(0); }
 
-        /* 回忆板块 */
-        .memory-card {
-            position: relative; overflow: hidden; border-radius: 24px; 
-            aspect-ratio: 4/5; cursor: pointer; 
-            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.15);
-        }
-        .memory-card img {
-            width: 100%; height: 100%; object-fit: cover;
-            transition: transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
+        /* 回忆板块 & 相簿 */
+        .memory-card { position: relative; overflow: hidden; border-radius: 24px; aspect-ratio: 4/5; cursor: pointer; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.15); }
+        .memory-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
         .memory-card:hover img { transform: scale(1.1); }
-        
-        .memory-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 20%, transparent 60%, rgba(0,0,0,0.6) 100%);
-            display: flex; flex-col; justify-content: space-between; padding: 1.5rem;
-        }
-        .memory-title {
-            color: white; font-weight: 800; font-size: 1.8rem; line-height: 1.1;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            letter-spacing: -0.02em;
-        }
-        .memory-date {
-            color: rgba(255,255,255,0.9); font-size: 0.75rem; font-weight: 600; 
-            text-transform: uppercase; letter-spacing: 0.1em;
-            margin-bottom: 0.5rem; display: block;
-        }
-        .play-icon {
-            width: 32px; height: 32px; background: rgba(255,255,255,0.3); backdrop-filter: blur(10px);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            opacity: 0; transform: scale(0.8); transition: all 0.3s;
-        }
+        .memory-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 20%, transparent 60%, rgba(0,0,0,0.6) 100%); display: flex; flex-col; justify-content: space-between; padding: 1.5rem; }
+        .memory-title { color: white; font-weight: 800; font-size: 1.8rem; line-height: 1.1; text-shadow: 0 2px 10px rgba(0,0,0,0.3); font-family: -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -0.02em; }
+        .memory-date { color: rgba(255,255,255,0.9); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; display: block; }
+        .play-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.3); backdrop-filter: blur(10px); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transform: scale(0.8); transition: all 0.3s; }
         .memory-card:hover .play-icon { opacity: 1; transform: scale(1); }
 
-        /* 相簿列表 */
         .album-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; padding-bottom: 5rem; }
         @media (min-width: 768px) { .album-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1024px) { .album-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -167,36 +155,52 @@
         <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
     </button>
 
+    <aside class="side-nav hidden md:flex">
+        <a href="#section-hero" class="nav-dot group active" title="精选">
+            <span class="nav-label">精选</span>
+        </a>
+        <a href="#section-albums" class="nav-dot group" title="相簿">
+            <span class="nav-label">相簿</span>
+        </a>
+        {% if memories %}
+        <a href="#section-memories" class="nav-dot group" title="回忆">
+            <span class="nav-label">回忆</span>
+        </a>
+        {% endif %}
+    </aside>
+
+    <div id="section-hero">
     {% if hero_photos %}
-    <div class="swiper mySwiper">
-        <div class="swiper-wrapper">
-            {% for i in range(3) %}
-                {% for photo in hero_photos %}
-                <div class="swiper-slide">
-                    <div class="slide-inner">
-                        <img src="{{ photo.url }}" loading="lazy" alt="photo">
-                        {% if photo.description %}
-                        <div class="slide-title">
-                            <p class="font-medium text-sm md:text-base text-white/95 leading-relaxed line-clamp-2 drop-shadow-sm">{{ photo.description }}</p>
+        <div class="swiper mySwiper">
+            <div class="swiper-wrapper">
+                {% for i in range(3) %}
+                    {% for photo in hero_photos %}
+                    <div class="swiper-slide">
+                        <div class="slide-inner">
+                            <img src="{{ photo.url }}" loading="lazy" alt="photo">
+                            {% if photo.description %}
+                            <div class="slide-title">
+                                <p class="font-medium text-sm md:text-base text-white/95 leading-relaxed line-clamp-2 drop-shadow-sm">{{ photo.description }}</p>
+                            </div>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
-                </div>
+                    {% endfor %}
                 {% endfor %}
-            {% endfor %}
+            </div>
         </div>
-    </div>
     {% endif %}
+    </div>
 
     <header class="py-10 px-4 text-center">
         <h1 class="text-4xl md:text-6xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-500">
             慕心水誥
         </h1>
-        <p class="text-neutral-500 dark:text-neutral-400 text-lg">2020-2025</p>
+        <p class="text-neutral-500 dark:text-neutral-400 text-lg">from 2020 to 2025</p>
     </header>
 
     <main class="max-w-7xl mx-auto px-4 pb-20">
-        <div>
+        <div id="section-albums">
             <h2 class="text-xl font-bold mb-5 text-neutral-500 dark:text-neutral-400 uppercase tracking-widest text-sm">所有相簿</h2>
             {% if albums|length == 0 %}
                 <div class="text-center text-neutral-500 py-10">暂无相簿</div>
@@ -219,9 +223,9 @@
         {% if memories %}
         <div class="border-t border-gray-200 dark:border-neutral-800 my-12"></div>
 
-        <div class="mb-12">
+        <div id="section-memories" class="mb-12">
             <h2 class="text-2xl font-bold mb-6 flex items-center justify-center gap-2 text-black dark:text-white">
-                <span>✨ 为您推荐</span>
+                <span>✨ 回忆 Memory</span>
             </h2>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -254,20 +258,14 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     
     <script>
-        // 🟢 Swiper 配置
         var swiper = new Swiper(".mySwiper", {
             slidesPerView: "auto",
             spaceBetween: 14,
             centeredSlides: true,
-            
-            // 自动布局更新
             observer: true,
             observeParents: true,
             updateOnImagesReady: true,
-
-            // 循环逻辑 (因为我们已经物理复制了3份，所以这里只需要简单的 loop: true)
             loop: true,
-            
             speed: 600,
             autoplay: {
                 delay: 3000,
@@ -278,7 +276,6 @@
             grabCursor: true
         });
 
-        // 兜底强制更新
         window.onload = function() {
             if(swiper) {
                 console.log("正在强制校准 Swiper 布局...");
@@ -286,10 +283,32 @@
             }
         };
 
+        // 🟢 3. 智能侧边栏：滚动监听高亮
+        document.addEventListener('DOMContentLoaded', () => {
+            const sections = document.querySelectorAll('div[id^="section-"]');
+            const navDots = document.querySelectorAll('.nav-dot');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // 移除所有激活状态
+                        navDots.forEach(dot => dot.classList.remove('active'));
+                        // 找到当前对应的导航点
+                        const activeLink = document.querySelector(`.nav-dot[href="#${entry.target.id}"]`);
+                        if (activeLink) activeLink.classList.add('active');
+                    }
+                });
+            }, {
+                threshold: 0.3 // 当板块出现 30% 时触发
+            });
+
+            sections.forEach(section => observer.observe(section));
+        });
+
         const configDiv = document.getElementById('server-config');
         const supabaseUrl = configDiv.getAttribute('data-url');
         const supabaseKey = configDiv.getAttribute('data-key');
-        const ADMIN_EMAIL = "ylltz2005@163.com"; 
+        const ADMIN_EMAIL = "admin@oreo.com"; 
 
         document.addEventListener('DOMContentLoaded', async () => {
             if (!window.supabase) return console.error("Supabase 库未加载");
