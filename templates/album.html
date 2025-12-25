@@ -33,37 +33,28 @@
         .dark body { background: #171717; color: white; }
         img { max-width: 100%; height: auto; display: block; }
         
-        .nav-bar { 
-            position: fixed; top: 0; width: 100%; 
-            background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); 
-            z-index: 40; padding: 1rem 1.5rem; 
-            border-bottom: 1px solid rgba(0,0,0,0.05); 
-            display: flex; justify-content: space-between; align-items: center; 
-        }
+        .nav-bar { position: fixed; top: 0; width: 100%; background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); z-index: 40; padding: 1rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
         .dark .nav-bar { background: rgba(23,23,23,0.8); border-bottom: 1px solid rgba(255,255,255,0.05); }
         
         .masonry-layout { column-count: 1; column-gap: 1.5rem; }
         @media (min-width: 768px) { .masonry-layout { column-count: 2; } }
         @media (min-width: 1024px) { .masonry-layout { column-count: 3; } }
         
-        .photo-card { 
-            break-inside: avoid; margin-bottom: 1.5rem; 
-            background: white; border-radius: 1rem; overflow: hidden; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
-            position: relative; transition: transform 0.3s;
-        }
+        .photo-card { break-inside: avoid; margin-bottom: 1.5rem; background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; transition: transform 0.3s; }
         .photo-card:hover { transform: translateY(-4px); }
         .dark .photo-card { background: #262626; }
         
-        /* 强制按钮在最上层 */
-        .like-btn-container { z-index: 50; position: relative; cursor: pointer; }
+        /* 强制按钮最高层级，并且鼠标手势 */
+        .like-btn-wrapper { 
+            cursor: pointer; 
+            z-index: 50; 
+            position: relative; 
+            pointer-events: auto; /* 强制响应鼠标 */
+            user-select: none;
+        }
         
         .like-animate { animation: like-bounce 0.3s; }
-        @keyframes like-bounce {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.3); }
-            100% { transform: scale(1); }
-        }
+        @keyframes like-bounce { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body class="bg-lightBg text-neutral-900 dark:bg-neutral-900 dark:text-white transition-colors duration-300">
@@ -100,11 +91,8 @@
         {% else %}
             {% for group in grouped_photos %}
                 <div class="py-4 mb-4">
-                    <h2 class="text-xl font-bold text-green-600 dark:text-green-400 pl-3 border-l-4 border-green-500">
-                        {{ group.date }}
-                    </h2>
+                    <h2 class="text-xl font-bold text-green-600 dark:text-green-400 pl-3 border-l-4 border-green-500">{{ group.date }}</h2>
                 </div>
-                
                 <div class="masonry-layout">
                     {% for photo in group.photos %}
                     <div class="photo-card group relative">
@@ -121,10 +109,12 @@
                             <div class="flex justify-between items-center mt-1">
                                 <span class="text-xs text-neutral-400">{{ photo.title }}</span>
                                 
-                                <button onclick="toggleLike(this)" data-pid="{{ photo.id }}" data-liked="false" class="like-btn-container flex items-center gap-1.5 group/btn transition-colors hover:text-red-500">
-                                    <svg class="heart-icon w-5 h-5 text-neutral-400 transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                                    <span class="like-count text-xs font-medium">{{ photo.likes }}</span>
-                                </button>
+                                <div class="like-btn-wrapper flex items-center gap-1.5 group/btn transition-colors hover:text-red-500" 
+                                     data-pid="{{ photo.id }}" 
+                                     data-liked="false">
+                                    <svg class="heart-icon w-5 h-5 text-neutral-400 transition-colors pointer-events-none" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                    <span class="like-count text-xs font-medium pointer-events-none">{{ photo.likes }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -135,20 +125,43 @@
     </main>
 
     <script>
+        // 1. 全局配置与状态
         const configDiv = document.getElementById('server-config');
         const supabaseUrl = configDiv.getAttribute('data-url');
         const supabaseKey = configDiv.getAttribute('data-key');
         const ADMIN_EMAIL = "admin@oreo.com"; 
         
         let currentUser = null;
-        // 🟢 全局定义 Supabase，防止作用域问题
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        let supabase = null;
 
-        async function init() {
-            if (!window.supabase) { setTimeout(init, 500); return; }
+        // 2. 页面加载完成后，绑定全局点击事件 (最稳的点击方案)
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("页面 JS 已加载");
             
+            // 全局监听点击
+            document.body.addEventListener('click', (e) => {
+                // 查找是否点击了 .like-btn-wrapper 或其子元素
+                const btn = e.target.closest('.like-btn-wrapper');
+                if (btn) {
+                    handleLikeClick(btn);
+                }
+            });
+
+            // 初始化 Supabase
+            try {
+                if (!window.supabase) {
+                    console.error("Supabase 库未加载");
+                    return;
+                }
+                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                initAuth();
+            } catch (err) {
+                console.error("初始化崩溃:", err);
+            }
+        });
+
+        async function initAuth() {
             const { data: { session } } = await supabase.auth.getSession();
-            
             if (session) {
                 currentUser = session.user;
                 if (currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
@@ -157,8 +170,6 @@
                     });
                 }
                 checkMyLikes();
-            } else {
-                console.log("未登录用户");
             }
         }
 
@@ -167,7 +178,7 @@
             const { data, error } = await supabase.from('likes').select('photo_id').eq('user_id', currentUser.id);
             if (data) {
                 const likedSet = new Set(data.map(item => String(item.photo_id)));
-                document.querySelectorAll('.like-btn-container').forEach(btn => {
+                document.querySelectorAll('.like-btn-wrapper').forEach(btn => {
                     const pid = String(btn.getAttribute('data-pid'));
                     if (likedSet.has(pid)) {
                         btn.dataset.liked = "true";
@@ -177,92 +188,70 @@
             }
         }
 
-        async function toggleLike(btn) {
-            // 🟢 诊断1：点击反馈
-            // alert("点击到了！正在处理..."); // 调试用，如果太烦可以注释掉
-
+        // 🟢 核心点击逻辑
+        async function handleLikeClick(btn) {
             const pid = btn.getAttribute('data-pid');
-            if (!pid) {
-                alert("❌ 错误：找不到图片ID (data-pid 为空)");
+            
+            // 权限检查
+            if (!currentUser) {
+                if(confirm("请先登录才能点赞，是否去登录？")) window.location.href = "/login";
                 return;
             }
 
-            if (!currentUser) {
-                // 如果没登录，去登录
-                if(confirm("请先登录才能点赞。是否前往登录页？")) {
-                    window.location.href = "/login";
-                }
-                return;
-            }
-            
             const icon = btn.querySelector('.heart-icon');
             const countSpan = btn.querySelector('.like-count');
             let currentCount = parseInt(countSpan.innerText) || 0;
             const isLiked = btn.dataset.liked === "true";
 
-            // UI 乐观更新
+            // 1. 乐观更新 UI
             if (isLiked) {
+                // 取消
                 btn.dataset.liked = "false";
                 icon.style.color = ''; 
                 countSpan.innerText = Math.max(0, currentCount - 1);
             } else {
+                // 点赞
                 btn.dataset.liked = "true";
                 icon.style.color = '#ef4444';
                 icon.classList.add('like-animate');
                 setTimeout(() => icon.classList.remove('like-animate'), 300);
                 countSpan.innerText = currentCount + 1;
             }
-            
-            // 发送请求
+
+            // 2. 发送请求
             try {
                 if (isLiked) {
-                    // 🟢 诊断2：使用更兼容的 .eq() 语法
-                    const { error } = await supabase
-                        .from('likes')
-                        .delete()
-                        .eq('user_id', currentUser.id)
-                        .eq('photo_id', pid);
-                        
+                    // 取消赞 (DELETE)
+                    const { error } = await supabase.from('likes').delete().eq('user_id', currentUser.id).eq('photo_id', pid);
                     if (error) throw error;
-                    // console.log("取消点赞成功");
-
                 } else {
-                    const { error } = await supabase
-                        .from('likes')
-                        .insert({ user_id: currentUser.id, photo_id: pid });
-                        
+                    // 点赞 (INSERT)
+                    const { error } = await supabase.from('likes').insert({ user_id: currentUser.id, photo_id: pid });
                     if (error) throw error;
-                    // console.log("点赞成功");
                 }
             } catch (err) {
-                console.error("操作失败:", err);
-                
-                // 回滚
+                console.error("点赞失败:", err);
+                // 回滚 UI
                 btn.dataset.liked = isLiked ? "true" : "false"; 
                 icon.style.color = isLiked ? '#ef4444' : ''; 
                 countSpan.innerText = currentCount; 
 
-                // 🟢 诊断3：详细错误提示
                 if (err.message.includes("policy")) {
-                    alert("❌ 数据库权限拒绝！\n请确保你在 Supabase SQL Editor 中运行了允许 INSERT/DELETE 的 SQL 语句。");
-                } else if (err.code === "23505") {
-                    console.log("重复操作，忽略");
-                } else {
-                    alert("❌ 未知错误: " + err.message + "\nCode: " + err.code);
+                    alert("❌ 失败：数据库拒绝写入 (RLS Policy Error)。\n请检查 SQL 权限设置。");
+                } else if (err.code !== "23505") { // 忽略重复插入错误
+                    alert("❌ 出错: " + err.message);
                 }
             }
         }
 
         async function deletePhoto(pid) {
-            if(!confirm("⚠️ 确定要永久删除这张照片吗？")) return;
+            if(!confirm("⚠️ 确定要删除吗？")) return;
             try {
                 const { error } = await supabase.from('photos').delete().eq('id', pid);
                 if (error) throw error;
                 alert("🗑 已删除"); window.location.reload();
             } catch (err) { alert("删除失败: " + err.message); }
         }
-
-        init();
     </script>
 </body>
 </html>
