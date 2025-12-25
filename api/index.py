@@ -4,26 +4,42 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for
 from supabase import create_client, Client
 
-# 🟢 1. Vercel 专用路径修复 (核心修改)
-# 获取当前文件 (api/index.py) 的绝对路径
+# 🟢 1. 路径配置 (确保能找到文件)
 current_dir = os.path.dirname(os.path.abspath(__file__))
-# 获取项目根目录 (即 api 文件夹的上一级)
 root_dir = os.path.dirname(current_dir)
-# 拼接出 templates 和 static 的绝对路径
 template_dir = os.path.join(root_dir, 'templates')
 static_dir = os.path.join(root_dir, 'static')
 
-# 初始化 Flask，使用绝对路径
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
 # 🟢 配置 Supabase (请确保这里填的是你自己的 URL 和 Key)
 SUPABASE_URL = "https://vupgwbjkdvriurufruua.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1cGd3YmprZHZyaXVydWZydXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyODUyOTEsImV4cCI6MjA4MDg2MTI5MX0.Hdk6pmuOdv8EKAZwYqUlhQozEhxPybOWt0I85tgF1Hw"
 
+
+
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 except Exception as e:
     print(f"Supabase init failed: {e}")
+
+# 🟢 3. 核武器：读取本地 JS 文件内容的函数
+def get_supabase_js_content():
+    try:
+        # 寻找 static/supabase.min.js
+        file_path = os.path.join(static_dir, 'supabase.min.js')
+        if os.path.exists(file_path):
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        else:
+            print(f"❌ 严重错误: 找不到文件 {file_path}")
+            return "console.error('SERVER ERROR: supabase.min.js not found on server disk');"
+    except Exception as e:
+        print(f"❌ 读取 JS 文件出错: {e}")
+        return f"console.error('SERVER ERROR: {str(e)}');"
+
+# 缓存一下 JS 内容，不用每次请求都读硬盘
+SUPABASE_JS_CODE = get_supabase_js_content()
 
 @app.route('/')
 def home():
@@ -49,7 +65,6 @@ def home():
                                supabase_url=SUPABASE_URL, 
                                supabase_key=SUPABASE_KEY)
     except Exception as e:
-        # Vercel 日志会记录这个 print
         print(f"Home Error: {e}")
         return f"Error loading home: {e}", 500
 
@@ -91,12 +106,14 @@ def show_album(album_name):
                 grouped_photos.append({ "date": date_label, "photos": [] })
             grouped_photos[-1]['photos'].append(photo_data)
         
+        # 🟢 重点：把读取到的 JS 代码 (supabase_js_code) 传给前端
         return render_template('album.html', 
                                album_name=album_name, 
                                album_desc=album_desc, 
                                grouped_photos=grouped_photos,
                                supabase_url=SUPABASE_URL, 
-                               supabase_key=SUPABASE_KEY)
+                               supabase_key=SUPABASE_KEY,
+                               supabase_js_code=SUPABASE_JS_CODE) # <--- 传这个变量
     except Exception as e:
         print(f"Album Error: {e}")
         return f"Error loading album: {e}", 500
@@ -105,7 +122,6 @@ def show_album(album_name):
 def upload_page():
     return render_template('upload.html', supabase_url=SUPABASE_URL, supabase_key=SUPABASE_KEY)
 
-# 🟢 3. 路由注册
 @app.route('/login')
 def login_page():
     return render_template('login.html', supabase_url=SUPABASE_URL, supabase_key=SUPABASE_KEY)
@@ -114,6 +130,5 @@ def login_page():
 def register_page():
     return render_template('register.html', supabase_url=SUPABASE_URL, supabase_key=SUPABASE_KEY)
 
-# Vercel 入口
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

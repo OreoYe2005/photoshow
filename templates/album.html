@@ -7,7 +7,9 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <script src="https://registry.npmmirror.com/@supabase/supabase-js/2.39.7/files/dist/umd/supabase.min.js"></script>
+    <script>
+        {{ supabase_js_code | safe }}
+    </script>
     
     <script>
         tailwind.config = {
@@ -16,7 +18,6 @@
         }
     </script>
     <script>
-        // 主题初始化
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
         } else {
@@ -34,59 +35,50 @@
     <script>
         window.ADMIN_EMAIL = "admin@oreo.com";
         window.currentUser = null;
-        window.supabase = null;
         window.supabaseClient = null;
 
-        // 🟢 库加载检查 (页面刚打开就运行)
+        // 加载检查
         document.addEventListener('DOMContentLoaded', () => {
-            // 检查 Supabase 是否存在
-            if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
-                // 如果加载失败，给整个页面加一个红色遮罩，提示用户
-                const errorOverlay = document.createElement('div');
-                errorOverlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,0,0,0.1);z-index:9999;display:flex;justify-content:center;align-items:center;backdrop-filter:blur(5px);";
-                errorOverlay.innerHTML = `
-                    <div style="background:white;padding:2rem;border-radius:1rem;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.2);">
-                        <h2 style="color:red;font-weight:bold;font-size:1.5rem;margin-bottom:1rem;">⚠️ 网络错误</h2>
-                        <p>Supabase 核心库加载失败。</p>
-                        <p style="color:#666;font-size:0.9rem;margin-top:0.5rem;">请尝试：<br>1. 刷新页面<br>2. 切换 Wi-Fi/手机热点<br>3. 关闭或开启 VPN</p>
-                        <button onclick="window.location.reload()" style="margin-top:1rem;padding:0.5rem 1.5rem;background:black;color:white;border:none;border-radius:0.5rem;cursor:pointer;">刷新重试</button>
-                    </div>
-                `;
-                document.body.appendChild(errorOverlay);
-                console.error("Supabase 库未从 npmmirror 加载成功");
-                return;
+            // 🟢 诊断：检查注入是否成功
+            if (!window.supabase || !window.supabase.createClient) {
+                const configDiv = document.getElementById('server-config');
+                // 如果后端注入失败，尝试最后的挣扎：用 CDN
+                console.error("本地注入失败，尝试 CDN...");
+                const script = document.createElement('script');
+                script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js";
+                script.onload = () => initApp(); // 加载成功后再初始化
+                document.head.appendChild(script);
+            } else {
+                console.log("✅ Supabase 本地代码注入成功！");
+                initApp();
             }
+        });
 
-            // 如果加载成功，进行初始化
-            console.log("✅ Supabase 库加载成功");
+        // 初始化逻辑封装
+        async function initApp() {
             const configDiv = document.getElementById('server-config');
             const supabaseUrl = configDiv.getAttribute('data-url');
             const supabaseKey = configDiv.getAttribute('data-key');
             
             try {
                 window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-                initAuth();
-            } catch (err) {
-                console.error("初始化失败:", err);
-            }
-        });
-
-        async function initAuth() {
-            if (!window.supabaseClient) return;
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (session) {
-                window.currentUser = session.user;
-                if (window.currentUser.email.toLowerCase() === window.ADMIN_EMAIL.toLowerCase()) {
-                    document.querySelectorAll('.admin-only').forEach(el => {
-                        el.classList.remove('hidden'); el.style.display = 'block';
-                    });
+                const { data: { session } } = await window.supabaseClient.auth.getSession();
+                if (session) {
+                    window.currentUser = session.user;
+                    if (window.currentUser.email.toLowerCase() === window.ADMIN_EMAIL.toLowerCase()) {
+                        document.querySelectorAll('.admin-only').forEach(el => {
+                            el.classList.remove('hidden'); el.style.display = 'block';
+                        });
+                    }
+                    checkMyLikes();
                 }
-                checkMyLikes();
+            } catch (err) {
+                console.error("初始化报错:", err);
             }
         }
 
         async function checkMyLikes() {
-            if (!window.currentUser || !window.supabaseClient) return;
+            if (!window.currentUser) return;
             const { data } = await window.supabaseClient.from('likes').select('photo_id').eq('user_id', window.currentUser.id);
             if (data) {
                 const likedSet = new Set(data.map(item => String(item.photo_id)));
@@ -100,27 +92,15 @@
             }
         }
 
-        // 全局点击函数
         window.handleLikeClick = async function(btn) {
-            // 双重检查
-            if (!window.supabaseClient) {
-                return alert("系统未就绪，JS库未加载。请刷新。");
-            }
+            if (!window.supabaseClient) return alert("系统正在初始化，请稍后...");
             
             const supabase = window.supabaseClient;
-
-            // 检查登录
             if (!window.currentUser) {
-                const { data } = await supabase.auth.getSession();
-                if (data.session) {
-                    window.currentUser = data.session.user;
-                } else {
-                    if(confirm("请先登录才能点赞。是否去登录？")) window.location.href = "/login";
-                    return;
-                }
+                if(confirm("请先登录才能点赞。是否去登录？")) window.location.href = "/login";
+                return;
             }
 
-            // 获取参数
             const pid = btn.getAttribute('data-pid');
             const icon = btn.querySelector('.heart-icon');
             const countSpan = btn.querySelector('.like-count');
@@ -138,7 +118,6 @@
                 countSpan.innerText = currentCount + 1;
             }
 
-            // 发送请求
             try {
                 if (isLiked) {
                     const { error } = await supabase.from('likes').delete().eq('user_id', window.currentUser.id).eq('photo_id', pid);
@@ -149,7 +128,6 @@
                 }
             } catch (err) {
                 console.error("操作失败:", err);
-                // 回滚
                 btn.setAttribute('data-liked', isLiked ? "true" : "false");
                 icon.style.color = isLiked ? '#ef4444' : '';
                 countSpan.innerText = currentCount;
@@ -169,18 +147,13 @@
         body { margin: 0; font-family: sans-serif; background: #f8fafc; color: #171717; }
         .dark body { background: #171717; color: white; }
         img { max-width: 100%; height: auto; display: block; }
-        
         .nav-bar { position: fixed; top: 0; width: 100%; background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); z-index: 40; padding: 1rem 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
         .dark .nav-bar { background: rgba(23,23,23,0.8); border-bottom: 1px solid rgba(255,255,255,0.05); }
-        
         .masonry-layout { column-count: 1; column-gap: 1.5rem; }
         @media (min-width: 768px) { .masonry-layout { column-count: 2; } }
         @media (min-width: 1024px) { .masonry-layout { column-count: 3; } }
-        
         .photo-card { break-inside: avoid; margin-bottom: 1.5rem; background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; transition: transform 0.3s; }
         .dark .photo-card { background: #262626; }
-        
-        /* 点赞按钮样式 */
         .like-btn-area { cursor: pointer; z-index: 50; position: relative; user-select: none; padding: 4px 8px; border-radius: 99px; }
         .like-btn-area:hover { background-color: rgba(0,0,0,0.05); }
         .dark .like-btn-area:hover { background-color: rgba(255,255,255,0.1); }
