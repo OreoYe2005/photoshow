@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for
 from supabase import create_client, Client
 
-# 🟢 1. 路径配置 (确保能找到文件)
+# 路径配置
 current_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(current_dir)
 template_dir = os.path.join(root_dir, 'templates')
@@ -17,28 +17,23 @@ SUPABASE_URL = "https://vupgwbjkdvriurufruua.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1cGd3YmprZHZyaXVydWZydXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyODUyOTEsImV4cCI6MjA4MDg2MTI5MX0.Hdk6pmuOdv8EKAZwYqUlhQozEhxPybOWt0I85tgF1Hw"
 
 
-
 try:
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 except Exception as e:
     print(f"Supabase init failed: {e}")
 
-# 🟢 3. 核武器：读取本地 JS 文件内容的函数
+# 读取本地 JS
 def get_supabase_js_content():
     try:
-        # 寻找 static/supabase.min.js
         file_path = os.path.join(static_dir, 'supabase.min.js')
         if os.path.exists(file_path):
             with open(file_path, 'r', encoding='utf-8') as f:
                 return f.read()
         else:
-            print(f"❌ 严重错误: 找不到文件 {file_path}")
-            return "console.error('SERVER ERROR: supabase.min.js not found on server disk');"
+            return "console.error('SERVER ERROR: supabase.min.js not found');"
     except Exception as e:
-        print(f"❌ 读取 JS 文件出错: {e}")
         return f"console.error('SERVER ERROR: {str(e)}');"
 
-# 缓存一下 JS 内容，不用每次请求都读硬盘
 SUPABASE_JS_CODE = get_supabase_js_content()
 
 @app.route('/')
@@ -47,6 +42,7 @@ def home():
         response = supabase.table('photos').select("*").order('created_at', desc=True).execute()
         all_data = response.data
         
+        # 随机取 10 张作为 Hero 轮播图
         if len(all_data) > 10:
             hero_photos = random.sample(all_data, 10)
         else:
@@ -63,7 +59,8 @@ def home():
                                albums=list(albums_dict.values()), 
                                hero_photos=hero_photos,
                                supabase_url=SUPABASE_URL, 
-                               supabase_key=SUPABASE_KEY)
+                               supabase_key=SUPABASE_KEY,
+                               supabase_js_code=SUPABASE_JS_CODE) # 🟢 记得加上这行！
     except Exception as e:
         print(f"Home Error: {e}")
         return f"Error loading home: {e}", 500
@@ -79,6 +76,7 @@ def show_album(album_name):
 
         response = supabase.table('photos').select("*").eq('album', album_name).order('taken_at', desc=True).execute()
         
+        # 获取点赞数据
         photo_ids = [p['id'] for p in response.data]
         likes_map = {}
         if photo_ids:
@@ -106,14 +104,13 @@ def show_album(album_name):
                 grouped_photos.append({ "date": date_label, "photos": [] })
             grouped_photos[-1]['photos'].append(photo_data)
         
-        # 🟢 重点：把读取到的 JS 代码 (supabase_js_code) 传给前端
         return render_template('album.html', 
                                album_name=album_name, 
                                album_desc=album_desc, 
                                grouped_photos=grouped_photos,
                                supabase_url=SUPABASE_URL, 
                                supabase_key=SUPABASE_KEY,
-                               supabase_js_code=SUPABASE_JS_CODE) # <--- 传这个变量
+                               supabase_js_code=SUPABASE_JS_CODE)
     except Exception as e:
         print(f"Album Error: {e}")
         return f"Error loading album: {e}", 500

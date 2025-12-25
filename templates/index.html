@@ -6,16 +6,18 @@
     <title>慕心水誥</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     
+    <script>
+        {{ supabase_js_code | safe }}
+    </script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: { extend: { colors: { lightBg: '#f8fafc' } } }
         }
     </script>
-
     <script>
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
@@ -32,101 +34,138 @@
     </script>
     
     <style>
-        img { max-width: 100%; height: auto; display: block; }
         body { margin: 0; font-family: sans-serif; background-color: #f8fafc; color: #171717; }
         .dark body { background-color: #171717; color: #ffffff; }
 
         .nav-bar {
-            position: absolute; top: 0; left: 0; width: 100%; padding: 1.5rem;
+            position: fixed; top: 0; left: 0; width: 100%; padding: 1.5rem;
             display: flex; justify-content: space-between; align-items: center; z-index: 40;
-            box-sizing: border-box;
+            background: rgba(255,255,255,0.0); /* 透明背景 */
+            transition: background 0.3s;
         }
+        .nav-bar:hover { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); }
+        .dark .nav-bar:hover { background: rgba(0,0,0,0.6); }
 
         .login-btn {
-            background-color: #171717; color: white; padding: 6px 16px; border-radius: 99px; 
+            background-color: rgba(255,255,255,0.9); color: black; padding: 6px 16px; border-radius: 99px; 
             text-decoration: none; font-size: 14px; font-weight: bold; display: inline-block;
+            backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        .dark .login-btn { background-color: white; color: black; }
 
-        .swiper { width: 100%; padding: 40px 0; }
-        .swiper-slide {
-            width: 320px; height: 220px; flex-shrink: 0;
-            background: transparent; display: flex; justify-content: center; align-items: center;
+        /* 🟢 2. Swiper 核心重构：固定高度，宽度自适应 */
+        .swiper { 
+            width: 100%; 
+            height: 60vh; /* 高度占屏幕 60%，非常大气 */
+            min-height: 400px;
+            padding-top: 80px; 
+            padding-bottom: 40px; 
         }
-        @media (min-width: 768px) { .swiper-slide { width: 480px; height: 320px; } }
+
+        .swiper-slide {
+            /* 关键点：宽度设为 auto，让图片撑开 */
+            width: auto; 
+            height: 100%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            transition: transform 0.5s ease;
+        }
 
         .slide-inner {
-            width: 100%; height: 100%; border-radius: 12px; overflow: hidden;
-            background-position: center; background-size: cover;
-            transform: scale(0.9); opacity: 0.6; filter: grayscale(20%);
-            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .swiper-slide-active .slide-inner {
-            transform: scale(1); opacity: 1; filter: none; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            height: 100%; 
+            width: auto; /* 跟随内容宽度 */
+            border-radius: 8px; 
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            /* 稍微缩小非活动图片 */
+            transform: scale(0.92); 
+            opacity: 0.8;
+            transition: all 0.5s;
         }
 
-        .album-grid {
-            display: grid; grid-template-columns: 1fr; gap: 2rem; padding-bottom: 5rem;
+        .swiper-slide-active .slide-inner {
+            transform: scale(1);
+            opacity: 1;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            z-index: 10;
         }
+
+        /* 核心修复：图片保持比例，撑满高度 */
+        .slide-inner img {
+            height: 100%;
+            width: auto;
+            object-fit: cover; /* 这里的 cover 只是为了防崩，实际上 width:auto 会让它完整显示 */
+            display: block;
+        }
+
+        .slide-title {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white; padding: 20px;
+            opacity: 0; transform: translateY(10px);
+            transition: all 0.3s;
+        }
+        .swiper-slide-active .slide-title { opacity: 1; transform: translateY(0); }
+
+        /* 相簿列表 */
+        .album-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; padding-bottom: 5rem; }
         @media (min-width: 768px) { .album-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1024px) { .album-grid { grid-template-columns: repeat(3, 1fr); } }
 
-        .album-card {
-            position: relative; overflow: hidden; border-radius: 1rem;
-            aspect-ratio: 4/3; background: #e5e5e5; display: block;
-        }
+        .album-card { position: relative; overflow: hidden; border-radius: 1rem; aspect-ratio: 4/3; background: #e5e5e5; display: block; }
         .dark .album-card { background: #262626; }
-        .album-card img { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* 上传按钮样式 */
+        .album-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s; }
+        .album-card:hover img { transform: scale(1.05); }
+
         #uploadBtn {
             position: fixed; bottom: 32px; right: 32px; width: 56px; height: 56px;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             font-size: 24px; font-weight: bold; z-index: 50;
             background-color: #16a34a; color: white; text-decoration: none;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            /* 默认隐藏 */
             display: none !important; 
         }
     </style>
 </head>
 <body class="bg-lightBg text-neutral-900 dark:bg-neutral-900 dark:text-white min-h-screen font-sans transition-colors duration-300">
 
+    <div id="server-config" data-url="{{ supabase_url }}" data-key="{{ supabase_key }}" style="display:none;"></div>
+
     <nav class="nav-bar">
-        <div class="text-xl font-bold tracking-tight">OREO</div>
+        <div class="text-xl font-bold tracking-tight text-black dark:text-white drop-shadow-lg">OREO</div>
         <div id="userArea" class="flex items-center gap-3">
-            <a href="/login" class="login-btn hover:opacity-80 transition">登录</a>
+            <a href="/login" class="login-btn hover:scale-105 transition">登录</a>
         </div>
     </nav>
 
-    <button onclick="toggleTheme()" class="fixed top-20 right-6 z-50 p-2.5 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-lg border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-yellow-400">
+    <button onclick="toggleTheme()" class="fixed top-20 right-6 z-50 p-2.5 rounded-full bg-white/80 dark:bg-neutral-800/80 shadow-lg border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-yellow-400 hover:scale-110 transition-transform cursor-pointer">
         <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
         <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
     </button>
 
     {% if hero_photos %}
-    <div class="relative w-full overflow-hidden mt-16 mb-8">
-        <div class="swiper mySwiper">
-            <div class="swiper-wrapper">
-                {% for photo in hero_photos %}
-                <div class="swiper-slide cursor-pointer group">
-                    <div class="slide-inner relative">
-                        <img src="{{ photo.url }}" loading="lazy">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div class="absolute bottom-4 left-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md">
-                            {{ photo.title }}
-                        </div>
+    <div class="swiper mySwiper">
+        <div class="swiper-wrapper">
+            {% for photo in hero_photos %}
+            <div class="swiper-slide">
+                <div class="slide-inner">
+                    <img src="{{ photo.url }}" loading="lazy" alt="{{ photo.title }}">
+                    <div class="slide-title">
+                        <h3 class="font-bold text-lg">{{ photo.title }}</h3>
+                        {% if photo.description %}
+                        <p class="text-xs opacity-80 line-clamp-1">{{ photo.description }}</p>
+                        {% endif %}
                     </div>
                 </div>
-                {% endfor %}
             </div>
+            {% endfor %}
         </div>
     </div>
     {% endif %}
 
     <header class="py-10 px-4 text-center">
-        <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-500" style="background-clip:text; -webkit-background-clip:text;">
+        <h1 class="text-4xl md:text-6xl font-bold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-500">
             慕心水誥
         </h1>
         <p class="text-neutral-500 dark:text-neutral-400 text-lg">2020-2025</p>
@@ -139,7 +178,7 @@
             <div class="album-grid">
                 {% for album in albums %}
                 <a href="/album/{{ album.name }}" class="album-card group shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-                    <img src="{{ album.cover }}" class="transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100">
+                    <img src="{{ album.cover }}" loading="lazy">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
                     <div class="absolute bottom-0 left-0 p-6 w-full transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
                         <h2 class="text-3xl font-bold text-white mb-1 drop-shadow-md">{{ album.name }}</h2>
@@ -150,73 +189,70 @@
             </div>
         {% endif %}
 
-        <a href="/upload" id="uploadBtn" class="fab-btn hover:bg-green-500 transition-transform hover:scale-110 hover:rotate-90">
+        <a href="/upload" id="uploadBtn" class="hover:bg-green-500 transition-transform hover:scale-110 hover:rotate-90">
             +
         </a>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+    
     <script>
+        // 🟢 初始化 Swiper：支持自适应宽度
         var swiper = new Swiper(".mySwiper", {
-            centeredSlides: true, slidesPerView: "auto", spaceBetween: 0, 
-            loop: true, loopedSlides: 8, speed: 800, grabCursor: true, slideToClickedSlide: true,
-            observer: true, observeParents: true,
-            autoplay: { delay: 2000, disableOnInteraction: false, pauseOnMouseEnter: true },
+            slidesPerView: "auto", // 关键：让每个 slide 宽度根据内容自适应
+            spaceBetween: 20,
+            centeredSlides: true,
+            loop: true,
+            speed: 800,
+            autoplay: {
+                delay: 3000,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true
+            },
+            mousewheel: true, // 支持鼠标滚轮
+            grabCursor: true
         });
 
-        const supabaseUrl = "{{ supabase_url }}";
-        const supabaseKey = "{{ supabase_key }}";
-        
-        // 🟢 这里请填入你的管理员邮箱 (小写)
-        const ADMIN_EMAIL = "ylltz2005@163.com"; 
+        // 🟢 注入版 Supabase 逻辑
+        const configDiv = document.getElementById('server-config');
+        const supabaseUrl = configDiv.getAttribute('data-url');
+        const supabaseKey = configDiv.getAttribute('data-key');
+        const ADMIN_EMAIL = "admin@oreo.com"; 
 
-        async function checkUser() {
-            // 等待库加载
-            if (!window.supabase) { setTimeout(checkUser, 500); return; }
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 检查 Supabase
+            if (!window.supabase) return console.error("Supabase 库未加载");
+            
+            const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            const userArea = document.getElementById('userArea');
+            const uploadBtn = document.getElementById('uploadBtn');
 
-            try {
-                const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-                const { data: { user }, error } = await supabase.auth.getUser();
+            if (session) {
+                const user = session.user;
+                userArea.innerHTML = `
+                    <span class="text-sm font-medium text-black dark:text-white mr-2 bg-white/50 dark:bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm shadow-sm">
+                        Hi, ${user.email.split('@')[0]}
+                    </span>
+                    <button onclick="logout()" class="text-xs bg-black text-white px-3 py-1.5 rounded-full hover:bg-gray-800 transition shadow-md">退出</button>
+                `;
                 
-                const userArea = document.getElementById('userArea');
-                const uploadBtn = document.getElementById('uploadBtn');
-
-                if (user) {
-                    // 显示用户信息
-                    userArea.innerHTML = `
-                        <span class="text-sm text-neutral-500 dark:text-neutral-400 mr-2">Hi, ${user.email.split('@')[0]}</span>
-                        <button onclick="logout()" class="text-xs bg-neutral-200 dark:bg-neutral-800 px-3 py-1 rounded-full cursor-pointer hover:bg-neutral-300">退出</button>
-                    `;
-                    
-                    // 🟢 核心逻辑修改：
-                    if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-                        // 1. 如果是管理员：显示按钮 + 弹窗欢迎
-                        uploadBtn.style.display = 'flex';
-                        uploadBtn.style.setProperty('display', 'flex', 'important');
-                        
-                        // 延迟一点弹窗，体验更好
-                        setTimeout(() => {
-                            alert("🎉 欢迎回来，管理员！\n您拥有上传和删除照片的权限。");
-                        }, 500);
-                    } else {
-                        // 2. 如果是游客/普通用户：什么都不做，安静浏览
-                        // 移除所有调试用的 alert
-                    }
+                if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+                    uploadBtn.style.display = 'flex';
+                    uploadBtn.style.setProperty('display', 'flex', 'important');
+                    setTimeout(() => {
+                        console.log("管理员模式已激活");
+                    }, 500);
                 }
-            } catch (err) {
-                console.error("Auth Error:", err);
             }
-        }
+        });
 
         async function logout() { 
             const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
             await supabase.auth.signOut(); 
             window.location.reload(); 
         }
-
-        checkUser();
     </script>
 </body>
 </html>
