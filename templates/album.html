@@ -55,7 +55,9 @@
         .photo-card:hover { transform: translateY(-4px); }
         .dark .photo-card { background: #262626; }
         
-        /* 点赞动画 */
+        /* 强制按钮在最上层 */
+        .like-btn-container { z-index: 50; position: relative; cursor: pointer; }
+        
         .like-animate { animation: like-bounce 0.3s; }
         @keyframes like-bounce {
             0% { transform: scale(1); }
@@ -108,7 +110,7 @@
                     <div class="photo-card group relative">
                         <img src="{{ photo.src }}" loading="lazy" class="w-full h-auto">
                         
-                        <button onclick="deletePhoto('{{ photo.id }}')" class="admin-only hidden absolute top-3 right-3 bg-red-500/80 hover:bg-red-600 text-white p-2 rounded-full backdrop-blur-md shadow-sm transition-all hover:scale-110 z-20">
+                        <button onclick="deletePhoto('{{ photo.id }}')" class="admin-only hidden absolute top-3 right-3 bg-red-500/80 hover:bg-red-600 text-white p-2 rounded-full backdrop-blur-md shadow-sm transition-all hover:scale-110 z-50">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
 
@@ -119,7 +121,7 @@
                             <div class="flex justify-between items-center mt-1">
                                 <span class="text-xs text-neutral-400">{{ photo.title }}</span>
                                 
-                                <button onclick="toggleLike(this)" data-pid="{{ photo.id }}" data-liked="false" class="like-btn flex items-center gap-1.5 group/btn transition-colors hover:text-red-500 cursor-pointer">
+                                <button onclick="toggleLike(this)" data-pid="{{ photo.id }}" data-liked="false" class="like-btn-container flex items-center gap-1.5 group/btn transition-colors hover:text-red-500">
                                     <svg class="heart-icon w-5 h-5 text-neutral-400 transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                                     <span class="like-count text-xs font-medium">{{ photo.likes }}</span>
                                 </button>
@@ -139,42 +141,34 @@
         const ADMIN_EMAIL = "admin@oreo.com"; 
         
         let currentUser = null;
-        let supabase = null;
+        // 🟢 全局定义 Supabase，防止作用域问题
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         async function init() {
             if (!window.supabase) { setTimeout(init, 500); return; }
-            supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
             
             const { data: { session } } = await supabase.auth.getSession();
             
             if (session) {
                 currentUser = session.user;
-                
-                // 1. 显示管理员按钮
                 if (currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
                     document.querySelectorAll('.admin-only').forEach(el => {
                         el.classList.remove('hidden'); el.style.display = 'block';
                     });
                 }
-                // 2. 检查点赞状态
                 checkMyLikes();
+            } else {
+                console.log("未登录用户");
             }
         }
 
         async function checkMyLikes() {
             if (!currentUser) return;
-            // 查我看过哪些照片
-            const { data, error } = await supabase
-                .from('likes')
-                .select('photo_id')
-                .eq('user_id', currentUser.id);
-
+            const { data, error } = await supabase.from('likes').select('photo_id').eq('user_id', currentUser.id);
             if (data) {
-                // 🟢 修复：将 ID 统一转为 String 进行比对，防止数字/字符串类型不匹配
                 const likedSet = new Set(data.map(item => String(item.photo_id)));
-                
-                document.querySelectorAll('.like-btn').forEach(btn => {
-                    const pid = String(btn.getAttribute('data-pid')); // 获取 DOM 里的 ID
+                document.querySelectorAll('.like-btn-container').forEach(btn => {
+                    const pid = String(btn.getAttribute('data-pid'));
                     if (likedSet.has(pid)) {
                         btn.dataset.liked = "true";
                         btn.querySelector('.heart-icon').style.color = '#ef4444';
@@ -184,28 +178,34 @@
         }
 
         async function toggleLike(btn) {
-            // 🟢 修复：直接从按钮本身获取 ID，不再传参
+            // 🟢 诊断1：点击反馈
+            // alert("点击到了！正在处理..."); // 调试用，如果太烦可以注释掉
+
             const pid = btn.getAttribute('data-pid');
-            
+            if (!pid) {
+                alert("❌ 错误：找不到图片ID (data-pid 为空)");
+                return;
+            }
+
             if (!currentUser) {
-                alert("请先登录才能点赞");
-                window.location.href = "/login";
+                // 如果没登录，去登录
+                if(confirm("请先登录才能点赞。是否前往登录页？")) {
+                    window.location.href = "/login";
+                }
                 return;
             }
             
             const icon = btn.querySelector('.heart-icon');
             const countSpan = btn.querySelector('.like-count');
-            let currentCount = parseInt(countSpan.innerText) || 0; // 防止 NaN
+            let currentCount = parseInt(countSpan.innerText) || 0;
             const isLiked = btn.dataset.liked === "true";
 
-            // --- 1. 乐观更新 UI ---
+            // UI 乐观更新
             if (isLiked) {
-                // 取消点赞
                 btn.dataset.liked = "false";
                 icon.style.color = ''; 
                 countSpan.innerText = Math.max(0, currentCount - 1);
             } else {
-                // 点赞
                 btn.dataset.liked = "true";
                 icon.style.color = '#ef4444';
                 icon.classList.add('like-animate');
@@ -213,30 +213,42 @@
                 countSpan.innerText = currentCount + 1;
             }
             
-            // --- 2. 发送请求 ---
+            // 发送请求
             try {
                 if (isLiked) {
-                    // 删
-                    const { error } = await supabase.from('likes').delete().match({ user_id: currentUser.id, photo_id: pid });
+                    // 🟢 诊断2：使用更兼容的 .eq() 语法
+                    const { error } = await supabase
+                        .from('likes')
+                        .delete()
+                        .eq('user_id', currentUser.id)
+                        .eq('photo_id', pid);
+                        
                     if (error) throw error;
+                    // console.log("取消点赞成功");
+
                 } else {
-                    // 增
-                    const { error } = await supabase.from('likes').insert({ user_id: currentUser.id, photo_id: pid });
+                    const { error } = await supabase
+                        .from('likes')
+                        .insert({ user_id: currentUser.id, photo_id: pid });
+                        
                     if (error) throw error;
+                    // console.log("点赞成功");
                 }
             } catch (err) {
                 console.error("操作失败:", err);
                 
-                // --- 3. 失败回滚 ---
+                // 回滚
                 btn.dataset.liked = isLiked ? "true" : "false"; 
                 icon.style.color = isLiked ? '#ef4444' : ''; 
                 countSpan.innerText = currentCount; 
 
-                // 提示具体错误
+                // 🟢 诊断3：详细错误提示
                 if (err.message.includes("policy")) {
-                    alert("❌ 失败：数据库权限不足。请检查是否在 Supabase SQL Editor 中运行了允许 Insert 的策略代码。");
-                } else if (!err.message.includes("duplicate")) {
-                    alert("❌ 出错: " + err.message);
+                    alert("❌ 数据库权限拒绝！\n请确保你在 Supabase SQL Editor 中运行了允许 INSERT/DELETE 的 SQL 语句。");
+                } else if (err.code === "23505") {
+                    console.log("重复操作，忽略");
+                } else {
+                    alert("❌ 未知错误: " + err.message + "\nCode: " + err.code);
                 }
             }
         }
