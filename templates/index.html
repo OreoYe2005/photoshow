@@ -55,7 +55,7 @@
         }
 
         /* 侧边导航 */
-        .side-nav { position: fixed; left: 2rem; top: 65%; transform: translateY(-50%); z-index: 50; display: flex; flex-direction: column; gap: 2rem; }
+        .side-nav { position: fixed; left: 2rem; top: 75%; transform: translateY(-50%); z-index: 50; display: flex; flex-direction: column; gap: 2rem; }
         .nav-item { display: flex; align-items: center; gap: 12px; cursor: pointer; opacity: 0.4; transition: all 0.3s ease; text-decoration: none; }
         .nav-item:hover, .nav-item.active { opacity: 1; transform: translateX(5px); }
         .nav-dot { width: 12px; height: 12px; border-radius: 50%; background-color: currentColor; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -75,21 +75,28 @@
         .swiper-slide {
             width: auto !important; height: 100%; 
             display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; transition: transform 0.5s ease;
+            /* 🟢 Safari 修复：增加 flex-basis 和 3D 变换触发 GPU 加速 */
+            flex-shrink: 0; flex-basis: auto; transform: translateZ(0);
+            transition: transform 0.5s ease;
         }
 
         .slide-inner {
             height: 100%; width: auto; 
-            /* 🟢 修复：删除了 min-width 和 background */
-            /* 之前是 min-width: 200px; background: rgba(0,0,0,0.05); */
-            /* 现在靠图片自身撑开宽度，背景透明 */
+            /* 保持无 min-width，靠图片撑开 */
             border-radius: 8px; overflow: hidden; position: relative;
             box-shadow: 0 4px 8px rgba(0,0,0,0.08); transform: scale(0.9); opacity: 0.7;
             transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
         .swiper-slide-active .slide-inner { transform: scale(1); opacity: 1; box-shadow: 0 12px 24px rgba(0,0,0,0.25); z-index: 10; }
-        .slide-inner img { height: 100% !important; width: auto !important; max-width: none !important; object-fit: cover; display: block; }
+        
+        .slide-inner img { 
+            height: 100% !important; width: auto !important; max-width: none !important; 
+            object-fit: cover; display: block; 
+            /* 🟢 Safari 修复：防止图片本身布局坍塌 */
+            flex-shrink: 0;
+        }
+        
         .slide-title {
             position: absolute; bottom: 0; left: 0; width: 100%;
             background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%); 
@@ -167,7 +174,7 @@
                     {% for photo in hero_photos %}
                     <div class="swiper-slide">
                         <div class="slide-inner">
-                            <img src="{{ photo.url }}" loading="lazy" alt="photo">
+                            <img src="{{ photo.url }}" alt="photo">
                             {% if photo.description %}
                             <div class="slide-title">
                                 <p class="font-medium text-sm md:text-base text-white/95 leading-relaxed line-clamp-2 drop-shadow-sm">{{ photo.description }}</p>
