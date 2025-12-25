@@ -7,7 +7,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
+    <script src="https://registry.npmmirror.com/@supabase/supabase-js/2.39.7/files/dist/umd/supabase.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -35,21 +35,78 @@
         window.ADMIN_EMAIL = "admin@oreo.com";
         window.currentUser = null;
         window.supabase = null;
+        window.supabaseClient = null;
 
-        // 全局点击处理函数
-        window.handleLikeClick = async function(btn) {
+        // 🟢 库加载检查 (页面刚打开就运行)
+        document.addEventListener('DOMContentLoaded', () => {
+            // 检查 Supabase 是否存在
+            if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+                // 如果加载失败，给整个页面加一个红色遮罩，提示用户
+                const errorOverlay = document.createElement('div');
+                errorOverlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,0,0,0.1);z-index:9999;display:flex;justify-content:center;align-items:center;backdrop-filter:blur(5px);";
+                errorOverlay.innerHTML = `
+                    <div style="background:white;padding:2rem;border-radius:1rem;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.2);">
+                        <h2 style="color:red;font-weight:bold;font-size:1.5rem;margin-bottom:1rem;">⚠️ 网络错误</h2>
+                        <p>Supabase 核心库加载失败。</p>
+                        <p style="color:#666;font-size:0.9rem;margin-top:0.5rem;">请尝试：<br>1. 刷新页面<br>2. 切换 Wi-Fi/手机热点<br>3. 关闭或开启 VPN</p>
+                        <button onclick="window.location.reload()" style="margin-top:1rem;padding:0.5rem 1.5rem;background:black;color:white;border:none;border-radius:0.5rem;cursor:pointer;">刷新重试</button>
+                    </div>
+                `;
+                document.body.appendChild(errorOverlay);
+                console.error("Supabase 库未从 npmmirror 加载成功");
+                return;
+            }
+
+            // 如果加载成功，进行初始化
+            console.log("✅ Supabase 库加载成功");
             const configDiv = document.getElementById('server-config');
             const supabaseUrl = configDiv.getAttribute('data-url');
             const supabaseKey = configDiv.getAttribute('data-key');
             
-            // 检查库是否加载
-            if (!window.supabaseClient) {
-                // 如果 window.supabase 还是 undefined，说明 CDN 真的被墙了或断网了
-                if (!window.supabase || !window.supabase.createClient) {
-                    return alert("❌ 致命错误：无法连接到 Supabase JS 库。\n请检查您的网络连接（可能需要 VPN）。");
-                }
+            try {
                 window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+                initAuth();
+            } catch (err) {
+                console.error("初始化失败:", err);
             }
+        });
+
+        async function initAuth() {
+            if (!window.supabaseClient) return;
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (session) {
+                window.currentUser = session.user;
+                if (window.currentUser.email.toLowerCase() === window.ADMIN_EMAIL.toLowerCase()) {
+                    document.querySelectorAll('.admin-only').forEach(el => {
+                        el.classList.remove('hidden'); el.style.display = 'block';
+                    });
+                }
+                checkMyLikes();
+            }
+        }
+
+        async function checkMyLikes() {
+            if (!window.currentUser || !window.supabaseClient) return;
+            const { data } = await window.supabaseClient.from('likes').select('photo_id').eq('user_id', window.currentUser.id);
+            if (data) {
+                const likedSet = new Set(data.map(item => String(item.photo_id)));
+                document.querySelectorAll('.like-btn-area').forEach(btn => {
+                    const pid = String(btn.getAttribute('data-pid'));
+                    if (likedSet.has(pid)) {
+                        btn.setAttribute('data-liked', "true");
+                        btn.querySelector('.heart-icon').style.color = '#ef4444';
+                    }
+                });
+            }
+        }
+
+        // 全局点击函数
+        window.handleLikeClick = async function(btn) {
+            // 双重检查
+            if (!window.supabaseClient) {
+                return alert("系统未就绪，JS库未加载。请刷新。");
+            }
+            
             const supabase = window.supabaseClient;
 
             // 检查登录
@@ -92,11 +149,19 @@
                 }
             } catch (err) {
                 console.error("操作失败:", err);
+                // 回滚
                 btn.setAttribute('data-liked', isLiked ? "true" : "false");
                 icon.style.color = isLiked ? '#ef4444' : '';
                 countSpan.innerText = currentCount;
                 alert("❌ 操作失败: " + err.message);
             }
+        }
+        
+        window.deletePhoto = async function(pid) {
+            if(!confirm("⚠️ 确定要删除吗？")) return;
+            const { error } = await window.supabaseClient.from('photos').delete().eq('id', pid);
+            if (error) alert(error.message);
+            else { alert("已删除"); window.location.reload(); }
         }
     </script>
 
@@ -115,6 +180,7 @@
         .photo-card { break-inside: avoid; margin-bottom: 1.5rem; background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; transition: transform 0.3s; }
         .dark .photo-card { background: #262626; }
         
+        /* 点赞按钮样式 */
         .like-btn-area { cursor: pointer; z-index: 50; position: relative; user-select: none; padding: 4px 8px; border-radius: 99px; }
         .like-btn-area:hover { background-color: rgba(0,0,0,0.05); }
         .dark .like-btn-area:hover { background-color: rgba(255,255,255,0.1); }
@@ -189,55 +255,5 @@
             {% endfor %}
         {% endif %}
     </main>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const configDiv = document.getElementById('server-config');
-            const supabaseUrl = configDiv.getAttribute('data-url');
-            const supabaseKey = configDiv.getAttribute('data-key');
-
-            // 🟢 确保 window.supabase 存在
-            if (!window.supabase) {
-                console.error("Supabase 库未加载");
-                return;
-            }
-            
-            window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-            
-            // 检查登录状态
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (session) {
-                window.currentUser = session.user;
-                if (window.currentUser.email.toLowerCase() === window.ADMIN_EMAIL.toLowerCase()) {
-                    document.querySelectorAll('.admin-only').forEach(el => {
-                        el.classList.remove('hidden'); el.style.display = 'block';
-                    });
-                }
-                checkMyLikes();
-            }
-        });
-
-        async function checkMyLikes() {
-            if (!window.currentUser) return;
-            const { data } = await window.supabaseClient.from('likes').select('photo_id').eq('user_id', window.currentUser.id);
-            if (data) {
-                const likedSet = new Set(data.map(item => String(item.photo_id)));
-                document.querySelectorAll('.like-btn-area').forEach(btn => {
-                    const pid = String(btn.getAttribute('data-pid'));
-                    if (likedSet.has(pid)) {
-                        btn.setAttribute('data-liked', "true");
-                        btn.querySelector('.heart-icon').style.color = '#ef4444';
-                    }
-                });
-            }
-        }
-        
-        window.deletePhoto = async function(pid) {
-            if(!confirm("⚠️ 确定要删除吗？")) return;
-            const { error } = await window.supabaseClient.from('photos').delete().eq('id', pid);
-            if (error) alert(error.message);
-            else { alert("已删除"); window.location.reload(); }
-        }
-    </script>
 </body>
 </html>
