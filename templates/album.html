@@ -7,7 +7,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <script src="/static/supabase.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/supabase.js/2.39.7/supabase.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -38,21 +38,24 @@
 
         // 全局点击处理函数
         window.handleLikeClick = async function(btn) {
-            // 1. 获取配置
+            // 获取配置
             const configDiv = document.getElementById('server-config');
             const supabaseUrl = configDiv.getAttribute('data-url');
             const supabaseKey = configDiv.getAttribute('data-key');
             
-            // 2. 初始化检查
+            // 检查库是否加载
             if (!window.supabaseClient) {
-                // 🟢 这里加个保险：如果本地文件也没加载，弹窗提示
-                if (!window.supabase) return alert("❌ 严重错误：static/supabase.min.js 文件未加载！请检查文件是否存在。");
+                // 如果 CDN 挂了，这里会报错
+                if (!window.supabase || !window.supabase.createClient) {
+                    return alert("❌ 错误：Supabase 库加载失败，请刷新页面重试。");
+                }
                 window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
             }
             const supabase = window.supabaseClient;
 
-            // 3. 检查登录
+            // 检查登录
             if (!window.currentUser) {
+                // 尝试临时获取会话
                 const { data } = await supabase.auth.getSession();
                 if (data.session) {
                     window.currentUser = data.session.user;
@@ -62,14 +65,14 @@
                 }
             }
 
-            // 4. 获取参数
+            // 获取参数
             const pid = btn.getAttribute('data-pid');
             const icon = btn.querySelector('.heart-icon');
             const countSpan = btn.querySelector('.like-count');
             let currentCount = parseInt(countSpan.innerText) || 0;
             const isLiked = btn.getAttribute('data-liked') === "true";
 
-            // 5. 乐观更新
+            // 乐观更新 UI
             if (isLiked) {
                 btn.setAttribute('data-liked', "false");
                 icon.style.color = ''; 
@@ -80,7 +83,7 @@
                 countSpan.innerText = currentCount + 1;
             }
 
-            // 6. 发送请求
+            // 发送请求
             try {
                 if (isLiked) {
                     const { error } = await supabase.from('likes').delete().eq('user_id', window.currentUser.id).eq('photo_id', pid);
@@ -91,10 +94,11 @@
                 }
             } catch (err) {
                 console.error("操作失败:", err);
+                // 失败回滚
                 btn.setAttribute('data-liked', isLiked ? "true" : "false");
                 icon.style.color = isLiked ? '#ef4444' : '';
                 countSpan.innerText = currentCount;
-                alert("❌ 失败: " + err.message);
+                alert("❌ 操作失败: " + err.message);
             }
         }
     </script>
@@ -114,9 +118,10 @@
         .photo-card { break-inside: avoid; margin-bottom: 1.5rem; background: white; border-radius: 1rem; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: relative; transition: transform 0.3s; }
         .dark .photo-card { background: #262626; }
         
-        /* 调试点击区域 */
-        .debug-btn-area { cursor: pointer; z-index: 50; position: relative; user-select: none; padding: 4px 8px; border-radius: 99px; }
-        .debug-btn-area:hover { background-color: rgba(0,0,0,0.05); }
+        /* 点赞按钮样式 */
+        .like-btn-area { cursor: pointer; z-index: 50; position: relative; user-select: none; padding: 4px 8px; border-radius: 99px; }
+        .like-btn-area:hover { background-color: rgba(0,0,0,0.05); }
+        .dark .like-btn-area:hover { background-color: rgba(255,255,255,0.1); }
     </style>
 </head>
 <body class="bg-lightBg text-neutral-900 dark:bg-neutral-900 dark:text-white transition-colors duration-300">
@@ -173,7 +178,7 @@
                             <div class="flex justify-between items-center mt-1">
                                 <span class="text-xs text-neutral-400">{{ photo.title }}</span>
                                 
-                                <div class="debug-btn-area flex items-center gap-1.5 transition-colors hover:text-red-500" 
+                                <div class="like-btn-area flex items-center gap-1.5 transition-colors hover:text-red-500" 
                                      onclick="window.handleLikeClick(this)"
                                      data-pid="{{ photo.id }}" 
                                      data-liked="false">
@@ -195,24 +200,23 @@
             const supabaseUrl = configDiv.getAttribute('data-url');
             const supabaseKey = configDiv.getAttribute('data-key');
 
-            // 🟢 检查本地文件是否生效
-            if (!window.supabase) {
-                console.error("Supabase 本地库加载失败！");
-                return;
-            }
-            
-            window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-            
-            // 检查登录状态
-            const { data: { session } } = await window.supabaseClient.auth.getSession();
-            if (session) {
-                window.currentUser = session.user;
-                if (window.currentUser.email.toLowerCase() === window.ADMIN_EMAIL.toLowerCase()) {
-                    document.querySelectorAll('.admin-only').forEach(el => {
-                        el.classList.remove('hidden'); el.style.display = 'block';
-                    });
+            // 初始化 Supabase
+            if (window.supabase && window.supabase.createClient) {
+                window.supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+                
+                // 检查登录状态
+                const { data: { session } } = await window.supabaseClient.auth.getSession();
+                if (session) {
+                    window.currentUser = session.user;
+                    if (window.currentUser.email.toLowerCase() === window.ADMIN_EMAIL.toLowerCase()) {
+                        document.querySelectorAll('.admin-only').forEach(el => {
+                            el.classList.remove('hidden'); el.style.display = 'block';
+                        });
+                    }
+                    checkMyLikes();
                 }
-                checkMyLikes();
+            } else {
+                console.error("Supabase CDN 加载失败");
             }
         });
 
@@ -221,7 +225,7 @@
             const { data } = await window.supabaseClient.from('likes').select('photo_id').eq('user_id', window.currentUser.id);
             if (data) {
                 const likedSet = new Set(data.map(item => String(item.photo_id)));
-                document.querySelectorAll('.debug-btn-area').forEach(btn => {
+                document.querySelectorAll('.like-btn-area').forEach(btn => {
                     const pid = String(btn.getAttribute('data-pid'));
                     if (likedSet.has(pid)) {
                         btn.setAttribute('data-liked', "true");
