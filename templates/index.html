@@ -52,7 +52,6 @@
             backdrop-filter: blur(5px); box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* 🟢 调整：高度保持 45vh，兼顾大屏和笔记本 */
         .swiper { 
             width: 100%; 
             height: 45vh; 
@@ -62,11 +61,13 @@
         }
 
         .swiper-slide {
-            width: auto; 
+            /* 🟢 关键 CSS 1：强制不压缩，宽度自适应 */
+            width: auto !important; 
             height: 100%; 
             display: flex; 
             align-items: center; 
             justify-content: center;
+            flex-shrink: 0; /* 防止被挤压 */
             transition: transform 0.5s ease;
         }
 
@@ -89,9 +90,11 @@
             z-index: 10;
         }
 
+        /* 🟢 关键 CSS 2：图片强制撑满高度，宽度自然伸缩 */
         .slide-inner img {
-            height: 100%;
-            width: auto;
+            height: 100% !important;
+            width: auto !important;
+            max-width: none !important; /* 防止 max-width: 100% 限制了竖图的自然宽度 */
             object-fit: cover;
             display: block;
         }
@@ -193,17 +196,21 @@
     
     <script>
         var swiper = new Swiper(".mySwiper", {
+            // 🟢 关键配置 1：自动宽度
             slidesPerView: "auto",
             spaceBetween: 14,
             centeredSlides: true,
-            loop: true,
-            // 🟢 关键修复：显式指定 loopedSlides 为一个较大的数（比如 10）
-            // 这告诉 Swiper：请预先复制 10 张图放在首尾，确保宽屏下也不会断档
-            loopedSlides: 10,
-            // 同时保留这个辅助参数
-            loopAdditionalSlides: 5,
             
-            speed: 800,
+            // 🟢 关键配置 2：开启监听。一旦图片加载完撑开 div，自动更新布局
+            observer: true,
+            observeParents: true,
+            updateOnImagesReady: true,
+
+            // 🟢 关键配置 3：Loop 配置
+            loop: true,
+            loopedSlides: 8, // 设置足够多的替补数量，防止宽屏断档
+            
+            speed: 600,
             autoplay: {
                 delay: 3000,
                 disableOnInteraction: false,
@@ -213,6 +220,16 @@
             grabCursor: true
         });
 
+        // 🟢 关键配置 4：万能补丁
+        // 有时候 observer 反应慢，我们在页面全部加载完后（所有图片就位），强制更新一次
+        window.onload = function() {
+            if(swiper) {
+                console.log("正在强制校准 Swiper 布局...");
+                swiper.update();
+            }
+        };
+
+        // Supabase 逻辑
         const configDiv = document.getElementById('server-config');
         const supabaseUrl = configDiv.getAttribute('data-url');
         const supabaseKey = configDiv.getAttribute('data-key');
